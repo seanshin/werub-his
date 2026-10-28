@@ -7,7 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { TransplantService } from './transplant.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import {
-  AddTransplantWaitlistDto, CreateTransplantRecordDto, RecordTransplantCrossmatchDto, RecordTransplantFollowUpDto, RecordTransplantHlaDto,
+  AddTransplantWaitlistDto, CreateTransplantRecordDto, DecideTransplantDonorDto, RecordTransplantCrossmatchDto, RecordTransplantFollowUpDto, RecordTransplantHlaDto,
   RecordTransplantTdmDto, RegisterKonosDto, RegisterTransplantDonorDto, ReportTransplantRejectionDto, UpdateTransplantCrossmatchDto,
   UpdateTransplantRejectionOutcomeDto, UpdateTransplantWaitlistStatusDto,
 } from './dto/transplant.dto';
@@ -41,6 +41,19 @@ export class TransplantController {
   @Get('donors')
   @ApiOperation({ summary: '기증자 목록' })
   async getDonors(@Query('organType') organType?: string) { return { data: await this.service.getDonors(organType) }; }
+
+  // 공개판: 기증자 승인 · 거절 — 이식 게이트는 승인(APPROVED)된 기증자만 통과시키는데, 그 상태로 가는 경로가 없었다
+  @Post('donors/:id/approve')
+  @ApiOperation({ summary: '기증자 승인(등록 · 평가 → 승인 · 판정자 기록)' })
+  async approveDonor(@Param('id', ParseUUIDPipe) id: string, @Body() body: DecideTransplantDonorDto, @CurrentUser('id') userId: string) {
+    return { data: await this.service.decideDonor(id, 'APPROVED', userId, body?.note) };
+  }
+
+  @Post('donors/:id/reject')
+  @ApiOperation({ summary: '기증자 거절(등록 · 평가 → 거절 · 사유 필수 · 판정자 기록)' })
+  async rejectDonor(@Param('id', ParseUUIDPipe) id: string, @Body() body: DecideTransplantDonorDto, @CurrentUser('id') userId: string) {
+    return { data: await this.service.decideDonor(id, 'REJECTED', userId, body?.note) };
+  }
 
   @Patch('donors/:id/crossmatch')
   @ApiOperation({ summary: '교차시험 결과 등록(수혈자 결속)' })

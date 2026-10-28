@@ -89,8 +89,11 @@ export class DocumentService {
     if (isServerBuiltDocumentType(dto.documentType)) {
       throw new BadRequestException({ code: 'DOCUMENT_TYPE_SERVER_BUILT', message: '서버가 원장에서 만드는 문서 종류입니다 — 전용 발급 경로를 쓰세요', details: { documentType: dto.documentType } });
     }
-    // 등록되지 않은 종류는 막지 않고 남긴다(운영 종류를 먼저 센 뒤 정한다 — 기획 §5)
-    if (!ISSUED_DOCUMENT_TYPE_LABEL[dto.documentType]) this.logger.warn(`등록되지 않은 문서 종류 발급: ${dto.documentType}`);
+    // 공개판: 등록된 문서 종류만 발급한다 — 발급번호 · 공개 진위 확인이 붙는 공식 문서가 목록 밖 종류로 나가지 않게.
+    //    새 종류는 문서 종류 목록(ISSUED_DOCUMENT_TYPE_LABEL)에 먼저 등록한다.
+    if (!ISSUED_DOCUMENT_TYPE_LABEL[dto.documentType]) {
+      throw new BadRequestException({ code: 'DOCUMENT_TYPE_UNREGISTERED', message: '등록되지 않은 문서 종류입니다 — 문서 종류 목록에 먼저 등록하세요', details: { documentType: dto.documentType } });
+    }
     let snapshot: Record<string, unknown>;
     if (!isPhysicianIssuedDocumentType(dto.documentType)) snapshot = dto.snapshot ?? {};
     else if (opts?.preSigned) {

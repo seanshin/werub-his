@@ -31,6 +31,7 @@ export class ControlledSubstanceController {
   }
 
   @Post(':id/verify')
+  @Roles(UserRole.DOCTOR, UserRole.PHARMACIST, UserRole.NURSE, UserRole.ADMIN) // 공개판: 역할을 경로에 명시(처방자 ≠ 확인자는 서비스가 검사)
   @ApiOperation({ summary: '2차 확인 (Double-check)' })
   async verify(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') verifierId: string) {
     return { data: await this.controlledSubstanceService.verify(id, verifierId) };
@@ -56,6 +57,7 @@ export class ControlledSubstanceController {
   }
 
   @Post(':id/waste')
+  @Roles(UserRole.PHARMACIST, UserRole.NURSE, UserRole.ADMIN) // 공개판: 재고 폐기 경로와 같은 역할
   @ApiOperation({ summary: '마약류 폐기 (독립 증인·잔량)' })
   async recordWaste(
     @Param('id', ParseUUIDPipe) id: string,
@@ -157,6 +159,7 @@ export class ControlledSubstanceController {
   }
 
   @Post(':id/return')
+  @Roles(UserRole.PHARMACIST, UserRole.NURSE, UserRole.ADMIN) // 공개판: 재고 반납 경로와 같은 역할
   @ApiOperation({ summary: '마약류 반납' })
   async returnDrug(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
     return { data: await this.controlledSubstanceService.returnDrug(id, userId) };

@@ -1,5 +1,5 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Injectable, Logger, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { ConfigRuntimeService } from '../config/config-runtime.service';
@@ -66,6 +66,28 @@ export class TransplantService {
     return this.prisma.transplantDonor.create({
       data: { ...data, hlaTyping: data.hlaTyping as never },
     });
+  }
+
+  /**
+   * 공개판: 기증자 승인 · 거절. 등록(REGISTERED) · 평가(EVALUATED) 단계에서만 판정하고, 판정자 · 시각 · 메모를
+   * 평가 메모에 남긴다(원장에 판정자 칸이 없다 · 전역 감사 로그에도 요청 주체가 남는다). 상태를 확인한 뒤 바꾼다.
+   */
+  async decideDonor(id: string, decision: 'APPROVED' | 'REJECTED', actorId?: string, note?: string) {
+    if (!actorId) throw new BadRequestException('판정자를 확인할 수 없습니다(재로그인 후 시도)');
+    const donor = await this.prisma.transplantDonor.findUnique({ where: { id } });
+    if (!donor) throw new NotFoundException('기증자를 찾을 수 없습니다');
+    if (donor.status !== 'REGISTERED' && donor.status !== 'EVALUATED') {
+      throw new BadRequestException('등록 · 평가 단계의 기증자만 승인 · 거절할 수 있습니다');
+    }
+    const memo = (note ?? '').trim();
+    if (decision === 'REJECTED' && !memo) throw new BadRequestException('거절 사유가 필요합니다');
+    const stamp = `[${decision}] by ${actorId} at ${new Date().toISOString()}` + (memo ? ` · ${memo}` : '');
+    const upd = await this.prisma.transplantDonor.updateMany({
+      where: { id, status: donor.status },
+      data: { status: decision, evaluationNotes: donor.evaluationNotes ? `${donor.evaluationNotes}\n${stamp}` : stamp },
+    });
+    if (upd.count === 0) throw new ConflictException('기증자 상태가 바뀌었습니다 — 다시 불러오세요');
+    return this.prisma.transplantDonor.findUnique({ where: { id } });
   }
 
   async getDonors(organType?: string) {

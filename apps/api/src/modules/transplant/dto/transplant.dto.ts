@@ -25,6 +25,11 @@ export class UpdateTransplantWaitlistStatusDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) removeReason?: string;
 }
 
+/** 공개판: 기증자 승인 · 거절 — 메모(거절은 사유 필수 · 서비스가 검사) */
+export class DecideTransplantDonorDto {
+  @ApiPropertyOptional({ description: '판정 메모(거절이면 사유 필수)' }) @IsOptional() @IsString() @MaxLength(500) note?: string;
+}
+
 export class RegisterTransplantDonorDto {
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(15) donorType!: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() donorPatientId?: string;

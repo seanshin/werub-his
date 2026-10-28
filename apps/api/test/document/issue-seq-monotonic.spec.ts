@@ -20,13 +20,13 @@ describe('DocumentService.issue — 채번 단조성(MAX+1)', () => {
 
   it('당일 발급 이력 없음(max=null) → seq=1', async () => {
     const { svc, create } = build(null);
-    await svc.issue({ documentType: 'X', sourceId: 's', snapshot: {} } as any);
+    await svc.issue({ documentType: 'CONSENT', sourceId: 's', snapshot: {} } as any);
     expect(create.mock.calls[0][0].data.seq).toBe(1);
   });
 
   it('count 가 아니라 aggregate(_max)로 채번(삭제 내성)', async () => {
     const { svc, aggregate } = build(3);
-    await svc.issue({ documentType: 'X', sourceId: 's', snapshot: {} } as any);
+    await svc.issue({ documentType: 'CONSENT', sourceId: 's', snapshot: {} } as any);
     expect(aggregate).toHaveBeenCalledWith(expect.objectContaining({ _max: { seq: true } }));
   });
 });

@@ -13,6 +13,9 @@ import { RehabService } from '../../src/modules/rehab/rehab.service';
 import { SafetyGateService } from '../../src/modules/safety-gate/safety-gate.service';
 import { ClinicalPathwayService } from '../../src/modules/clinical-pathway/clinical-pathway.service';
 import { RetentionService } from '../../src/modules/retention/retention.service';
+import { DocumentService } from '../../src/modules/document/document.service';
+import { ControlledSubstanceController } from '../../src/modules/controlled-substance/controlled-substance.controller';
+import { ROLES_KEY } from '../../src/common/decorators/roles.decorator';
 
 describe('이식 게이트 — 경고 · 차단 모두 위반 원장에 남긴다', () => {
   const mk = (mode: string) => {
@@ -232,5 +235,53 @@ describe('보유 정책 — 법정 하한은 낮추지 않는다', () => {
     await svc.upsertPolicy({ resourceType: 'EMR', retentionDays: 4000, legalMinDays: 3650 });
     await svc.upsertPolicy({ resourceType: 'EMR', retentionDays: 4000 });
     expect(prisma.retentionPolicy.upsert).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('기증자 승인 · 거절 — 기본 경로', () => {
+  const mk = (status: string) => {
+    const prisma: any = {
+      transplantDonor: {
+        findUnique: vi.fn(async () => ({ id: 'd1', status, evaluationNotes: null })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+    };
+    return { prisma, svc: new TransplantService(prisma) };
+  };
+
+  it('등록 단계 기증자를 승인하고 판정자를 남긴다', async () => {
+    const { prisma, svc } = mk('REGISTERED');
+    await svc.decideDonor('d1', 'APPROVED', 'u-1');
+    const arg = prisma.transplantDonor.updateMany.mock.calls[0][0];
+    expect(arg.where).toEqual({ id: 'd1', status: 'REGISTERED' });
+    expect(arg.data.status).toBe('APPROVED');
+    expect(arg.data.evaluationNotes).toContain('u-1');
+  });
+
+  it('거절은 사유가 있어야 한다', async () => {
+    const { svc } = mk('EVALUATED');
+    await expect(svc.decideDonor('d1', 'REJECTED', 'u-1')).rejects.toThrow(BadRequestException);
+    await expect(svc.decideDonor('d1', 'REJECTED', 'u-1', '부적합')).resolves.toBeTruthy();
+  });
+
+  it('이미 이식된 기증자 · 판정자 없음은 거부', async () => {
+    await expect(mk('DONATED').svc.decideDonor('d1', 'APPROVED', 'u-1')).rejects.toThrow(BadRequestException);
+    await expect(mk('REGISTERED').svc.decideDonor('d1', 'APPROVED')).rejects.toThrow(BadRequestException);
+  });
+});
+
+describe('마약류 — 경로별 역할을 명시한다', () => {
+  const roles = (m: string) => Reflect.getMetadata(ROLES_KEY, (ControlledSubstanceController.prototype as any)[m]);
+  it('2차 확인 · 폐기 · 반납', () => {
+    expect(roles('verify')).toEqual(['DOCTOR', 'PHARMACIST', 'NURSE', 'ADMIN']);
+    expect(roles('recordWaste')).toEqual(['PHARMACIST', 'NURSE', 'ADMIN']);
+    expect(roles('returnDrug')).toEqual(['PHARMACIST', 'NURSE', 'ADMIN']);
+  });
+});
+
+describe('문서 발급 — 등록된 종류만', () => {
+  it('목록 밖 종류는 거부', async () => {
+    const svc = new DocumentService({} as any);
+    await expect(svc.issue({ documentType: 'UNLISTED_TYPE_X', sourceId: 's1' } as any, 'u-1')).rejects.toThrow(BadRequestException);
   });
 });
