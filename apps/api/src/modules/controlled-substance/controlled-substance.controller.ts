@@ -158,8 +158,8 @@ export class ControlledSubstanceController {
 
   @Post(':id/return')
   @ApiOperation({ summary: '마약류 반납' })
-  async returnDrug(@Param('id', ParseUUIDPipe) id: string) {
-    return { data: await this.controlledSubstanceService.returnDrug(id) };
+  async returnDrug(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
+    return { data: await this.controlledSubstanceService.returnDrug(id, userId) };
   }
 
   /** 응답 봉투 = `{ data: { items, total, page, limit } }` — 화면은 total 로 '전체 기록'을 말한다. */

@@ -171,7 +171,9 @@ export class SafetyGateService {
       violations7d: hits.filter((h) => h.at >= d7).length,
       violations30d: hits.length,
       overrides30d: hits.filter((h) => h.overridden).length,
-      evaluated30d: rows.length, // 🔴 모집단 — 검사 자체가 0건이면 '위반 0'은 준수가 아니다
+      // 🔴 모집단 — 검사 자체가 0건이면 '위반 0'은 준수가 아니다. 공개판: 판정 기록(safetyChecks)이 있는 행만 센다
+      //    (게이트가 꺼져 판정하지 않은 행까지 세면 '한 번도 평가하지 않은 게이트'에 승격 권고가 뜬다)
+      evaluated30d: rows.filter((r) => r.safetyChecks != null).length,
       recent: hits.slice(0, RECENT_LIMIT).map((h) => ({ at: h.at.toISOString(), severity: h.severity, message: h.message, ref: h.ref })),
     };
   }
@@ -197,7 +199,7 @@ export class SafetyGateService {
       violations7d: hits.filter((h) => h.at >= d7).length,
       violations30d: hits.length,
       overrides30d: hits.filter((h) => h.overridden).length,
-      evaluated30d: rows.length,
+      evaluated30d: rows.filter((r) => r.safetyChecks != null).length, // 공개판: 판정 기록이 있는 세션만(위와 같은 이유)
       recent: hits.slice(0, RECENT_LIMIT).map((h) => ({ at: h.at.toISOString(), severity: h.severity, message: h.message, ref: h.ref })),
     };
   }

@@ -413,7 +413,8 @@ export class PharmacyService {
       if (claimed.count === 0) throw new ConflictException('이미 처리 중이거나 완료된 조제입니다');
       await tx.order.update({
         where: { id: dispensing.orderId },
-        data: { status: 'COMPLETED', completedAt: new Date(), ...(secondCheckBy ? { completedById: secondCheckBy } : {}) },
+        // 공개판: 유효한 2차 확인자만 완료자 칸에 적는다(무효한 ID 가 오더 기록에 남지 않게)
+        data: { status: 'COMPLETED', completedAt: new Date(), ...(secondCheckBy && validSecond ? { completedById: secondCheckBy } : {}) },
       });
       return tx.dispensing.update({
         where: { id },
@@ -598,7 +599,7 @@ export class PharmacyService {
   ) {
     const dispensing = await this.prisma.dispensing.findUnique({
       where: { id },
-      include: { items: true, order: { include: { prescription: { select: { quantity: true } } } } },
+      include: { items: true, order: { include: { prescription: { select: { id: true, quantity: true, medicationCodeId: true } } } } },
     });
     if (!dispensing) throw new NotFoundException('Dispensing not found');
 
@@ -620,6 +621,21 @@ export class PharmacyService {
       // 클라이언트가 prescribedQty를 부풀려 초과 조제하는 것 방지 — 실 처방 수량 대비 검증.
       if (orderedQty != null && it.dispensedQty > orderedQty) {
         throw new BadRequestException(`조제 수량(${it.dispensedQty})이 실제 처방 수량(${orderedQty})을 초과할 수 없습니다`);
+      }
+    }
+
+    // 공개판: 약품도 처방과 대조한다 — 처방 약품 또는 **승인된 대체조제** 약품만 조제 항목이 될 수 있다.
+    //    (수량만 보면 승인 없이 다른 약으로 바뀐다.) 처방에 약품 코드가 없으면(자유 기재) 대조하지 않는다.
+    const rx = dispensing.order?.prescription;
+    if (rx?.medicationCodeId) {
+      const subs = await this.prisma.genericSubstitution.findMany({
+        where: { originalPrescriptionId: rx.id, status: 'APPROVED' },
+        select: { substituteMedicationCodeId: true },
+      });
+      const allowed = new Set([rx.medicationCodeId, ...subs.map((s) => s.substituteMedicationCodeId)]);
+      const wrong = items.filter((it) => !allowed.has(it.medicationCodeId));
+      if (wrong.length > 0) {
+        throw new BadRequestException('처방 약품(또는 승인된 대체조제 약품)이 아닌 항목은 조제할 수 없습니다 — 대체조제 승인을 먼저 받으세요');
       }
     }
 
@@ -651,6 +667,11 @@ export class PharmacyService {
 
     if (dispensing.status === DispensingStatus.VERIFIED) {
       throw new ConflictException('Cannot cancel verified dispensing');
+    }
+    // 공개판: 교부(ISSUED) · 이미 취소된 조제는 취소하지 않는다 — 오더가 접수로 돌아가 같은 처방을 다시 조제하게 된다.
+    //    교부 뒤에 되돌릴 일은 반납 · 회수 절차로 다룬다.
+    if (dispensing.status !== DispensingStatus.PENDING && dispensing.status !== DispensingStatus.DISPENSED) {
+      throw new ConflictException(`Cannot cancel dispensing with status ${dispensing.status}`);
     }
 
     /**

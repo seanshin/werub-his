@@ -111,7 +111,7 @@ describe('이비인후과 수면검사 CPAP', () => {
 describe('재활 치료 완료 시간', () => {
   function rehab(startTime: Date | null) {
     const prisma: any = {
-      rehabSession: { findUnique: vi.fn(async () => ({ id: 's1', therapyType: 'PT', startTime })), update: vi.fn(async ({ data }: any) => data) },
+      rehabSession: { findUnique: vi.fn(async () => ({ id: 's1', therapyType: 'PT', startTime, status: 'IN_PROGRESS' })), update: vi.fn(async ({ data }: any) => data) },
       procedureCode: { findFirst: vi.fn(async () => null) },
     };
     return { s: new RehabService(prisma), prisma };

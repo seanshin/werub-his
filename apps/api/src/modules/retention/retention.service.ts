@@ -1,6 +1,6 @@
 import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Injectable, Logger, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { AuditAction, Prisma } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -102,6 +102,14 @@ export class RetentionService {
 
   /** 정책 등록/수정 정본 — 컨트롤러·거버넌스 집행 엔진(P3)이 같은 경로를 쓴다. 파기 실행은 여기 없다(4-eyes 전용·바인딩 제외) */
   async upsertPolicy(body: { resourceType: string; retentionDays: number; legalMinDays?: number; action?: string; legalConfirmed?: boolean; enabled?: boolean; description?: string }) {
+    // 공개판: 법정 하한(legalMinDays)은 이 경로로 **낮추지 않는다** — 하한이 낮아지면 파기 클램프도 같이 낮아진다.
+    //    올리는 것은 된다. 법령이 바뀌어 낮춰야 하면 근거를 남기는 별도 절차(위원회 의결 · DB 관리)로 한다.
+    if (body.legalMinDays !== undefined) {
+      const cur = await this.prisma.retentionPolicy.findUnique({ where: { resourceType: body.resourceType }, select: { legalMinDays: true } });
+      if (cur && body.legalMinDays < cur.legalMinDays) {
+        throw new BadRequestException('법정 하한은 낮출 수 없습니다 — 올리는 것만 됩니다');
+      }
+    }
     return this.prisma.retentionPolicy.upsert({
       where: { resourceType: body.resourceType },
       update: {

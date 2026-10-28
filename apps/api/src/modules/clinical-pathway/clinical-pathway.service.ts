@@ -118,7 +118,7 @@ export class ClinicalPathwayService {
 
   /** 경로 수정 */
   async update(id: string, data: Record<string, unknown>) {
-    await this.ensurePathwayExists(id);
+    await this.ensureDraftPathway(id);
 
     const updateData: Record<string, unknown> = {};
     if (data.name !== undefined) updateData.name = data.name;
@@ -147,7 +147,7 @@ export class ClinicalPathwayService {
       throw new BadRequestException('DRAFT 상태의 경로만 발행할 수 있습니다.');
     }
     const verdict = this.governance
-      ? await this.governance.evaluate({ kind: 'PATHWAY', code: pathway.code, action: 'ENACT', decisionNo: opts?.decisionNo })
+      ? await this.governance.evaluate({ kind: 'PATHWAY', code: baseCode(pathway.code), action: 'ENACT', decisionNo: opts?.decisionNo })
       : null;
     if (verdict) this.governance!.assertOrWarn(verdict);
 
@@ -164,16 +164,24 @@ export class ClinicalPathwayService {
     return { ...updated, governance: verdict };
   }
 
-  /** ACTIVE -> RETIRED 폐기 */
-  async retire(id: string) {
+  /**
+   * ACTIVE -> RETIRED 폐기.
+   * 공개판: 발행(ENACT)과 같은 거버넌스 판정(RETIRE)을 거친다 — 기본은 경고(막지 않음)이고 판정을 응답에 싣는다.
+   */
+  async retire(id: string, opts?: { decisionNo?: string | null }) {
     const pathway = await this.ensurePathwayExists(id);
     if (pathway.status !== 'ACTIVE') {
       throw new BadRequestException('ACTIVE 상태의 경로만 폐기할 수 있습니다.');
     }
-    return this.prisma.clinicalPathway.update({
+    const verdict = this.governance
+      ? await this.governance.evaluate({ kind: 'PATHWAY', code: baseCode(pathway.code), action: 'RETIRE', decisionNo: opts?.decisionNo ?? null })
+      : null;
+    if (verdict) this.governance!.assertOrWarn(verdict);
+    const updated = await this.prisma.clinicalPathway.update({
       where: { id },
       data: { status: 'RETIRED' },
     });
+    return { ...updated, governance: verdict };
   }
 
   /** 경로 복제 (새 버전) */
@@ -184,8 +192,10 @@ export class ClinicalPathwayService {
     });
     if (!source) throw new NotFoundException('원본 경로를 찾을 수 없습니다.');
 
+    // 공개판: 버전은 **기준 코드**로 센다 — 복제본(`X_v2`)을 다시 복제해도 `X_v3` 이 되게(번호가 갈라지지 않게)
+    const base = baseCode(source.code);
     const maxVersion = await this.prisma.clinicalPathway.aggregate({
-      where: { code: source.code },
+      where: { OR: [{ code: base }, { code: { startsWith: `${base}_v` } }] },
       _max: { version: true },
     });
     const nextVersion = (maxVersion._max.version ?? 0) + 1;
@@ -193,7 +203,7 @@ export class ClinicalPathwayService {
     return this.prisma.$transaction(async (tx) => {
       const cloned = await tx.clinicalPathway.create({
         data: {
-          code: `${source.code}_v${nextVersion}`,
+          code: `${base}_v${nextVersion}`,
           name: source.name,
           department: source.department,
           targetDrg: source.targetDrg,
@@ -270,7 +280,7 @@ export class ClinicalPathwayService {
 
   /** 마일스톤 추가 */
   async addMilestone(pathwayId: string, data: Record<string, unknown>) {
-    await this.ensurePathwayExists(pathwayId);
+    await this.ensureDraftPathway(pathwayId);
     const detail = await this.normalizeMilestoneDetail(data.detail);
     return this.prisma.pathwayMilestone.create({
       data: {
@@ -289,6 +299,7 @@ export class ClinicalPathwayService {
   async updateMilestone(id: string, data: Record<string, unknown>) {
     const exists = await this.prisma.pathwayMilestone.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException('마일스톤을 찾을 수 없습니다.');
+    await this.ensureDraftPathway(exists.pathwayId);
 
     const updateData: Record<string, unknown> = {};
     if (data.day !== undefined) updateData.day = data.day;
@@ -305,6 +316,7 @@ export class ClinicalPathwayService {
   async deleteMilestone(id: string) {
     const exists = await this.prisma.pathwayMilestone.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException('마일스톤을 찾을 수 없습니다.');
+    await this.ensureDraftPathway(exists.pathwayId);
     await this.prisma.pathwayMilestone.delete({ where: { id } });
     return { deleted: true };
   }
@@ -634,4 +646,21 @@ export class ClinicalPathwayService {
     if (!pathway) throw new NotFoundException('경로를 찾을 수 없습니다.');
     return pathway;
   }
+
+  /**
+   * 공개판: 발행(ACTIVE) · 폐기(RETIRED)된 경로는 그 자리에서 고치지 않는다 — 환자에게 적용 중인 표준이
+   * 거버넌스 판정 없이 바뀌기 때문이다. 고칠 때는 복제해 새 버전(DRAFT)을 만들고 발행한다.
+   */
+  private async ensureDraftPathway(id: string) {
+    const pathway = await this.ensurePathwayExists(id);
+    if (pathway.status !== 'DRAFT') {
+      throw new BadRequestException('발행 · 폐기된 경로는 직접 고칠 수 없습니다 — 복제해 새 버전으로 고친 뒤 발행하세요.');
+    }
+    return pathway;
+  }
+}
+
+/** 공개판: 복제본 코드(`X_v2`)의 기준 코드(`X`) — 거버넌스 규칙 · 버전 번호는 기준 코드로 찾는다 */
+function baseCode(code: string): string {
+  return code.replace(/_v\d+$/, '');
 }

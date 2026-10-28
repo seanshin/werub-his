@@ -585,17 +585,20 @@ export class ControlledSubstanceService {
     return { updated: targets.length, nimsRefNo: ref, submittedAt };
   }
 
-  async returnDrug(id: string) {
+  async returnDrug(id: string, returnedBy?: string) {
     const log = await this.prisma.controlledSubstanceLog.findUnique({ where: { id } });
     if (!log) throw new NotFoundException('Record not found');
     if (!['DISPENSED', 'VERIFIED'].includes(log.status)) {
       throw new BadRequestException('조제 또는 확인 상태에서만 반납 가능합니다.');
     }
-
-    return this.prisma.controlledSubstanceLog.update({
-      where: { id },
-      data: { status: 'RETURNED' },
-    });
+    // 공개판: 반납도 다른 전이처럼 사람을 남기고 원자적으로 전이한다(동시 반납 · 폐기 충돌 방지).
+    //    원장에 반납자 칸이 없어 기록 메모에 남긴다(전역 감사 로그에도 요청 주체가 남는다).
+    if (!returnedBy) throw new BadRequestException('반납 수행자를 확인할 수 없습니다(재로그인 후 시도).');
+    const stamp = `[RETURNED] by ${returnedBy} at ${new Date().toISOString()}`;
+    return this.atomicTransition(id, log.status, {
+      status: 'RETURNED',
+      notes: log.notes ? `${log.notes}\n${stamp}` : stamp,
+    }, '이미 반납 · 폐기되었거나 상태가 바뀌었습니다');
   }
 
   async getLogs(filters: {

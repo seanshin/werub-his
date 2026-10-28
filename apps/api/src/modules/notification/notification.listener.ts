@@ -434,11 +434,12 @@ export class NotificationListener {
     }
   }
 
-  /** 마약류 실사 불일치(유용 의심) 시 관리자(ADMIN) 전원 능동 통지 */
+  /** 마약류 실사 불일치(유용 의심) 시 약사 · 관리자 능동 통지(대상은 알림 정책으로 바꿀 수 있다) */
   @OnEvent('controlled.discrepancy')
   async handleControlledDiscrepancy(payload: { stockId?: string; drugName?: string; deaSchedule?: string; location?: string; bookBalance?: string; countedQty?: string; discrepancy?: string }) {
     try {
-      const policy = await this.policyFor('CONTROLLED_DISCREPANCY', { roles: ['ADMIN'], dedupHours: 0 });
+      // 공개판: 기본 대상을 알림 등록부(alert-registry)와 같게 — 약사 · 관리자
+      const policy = await this.policyFor('CONTROLLED_DISCREPANCY', { roles: ['PHARMACIST', 'ADMIN'], dedupHours: 0 });
       const admins = await this.policyTargets(policy.roles);
       const msg = `${payload.drugName ?? ''}(${payload.location ?? ''}) 실사 불일치 — 장부 ${payload.bookBalance ?? ''} vs 실사 ${payload.countedQty ?? ''} (차이 ${payload.discrepancy ?? ''}). 유용 여부 확인 필요`;
       for (const a of admins) {

@@ -148,7 +148,7 @@ describe('RehabService', () => {
 
   describe('startSession', () => {
     it('should start session', async () => {
-      mockPrisma.rehabSession.findUnique.mockResolvedValue({ id: 'rs-1' });
+      mockPrisma.rehabSession.findUnique.mockResolvedValue({ id: 'rs-1', status: 'SCHEDULED' });
       mockPrisma.rehabSession.update.mockResolvedValue({ id: 'rs-1', status: 'IN_PROGRESS' });
       const result = await service.startSession('rs-1');
       expect(result.status).toBe('IN_PROGRESS');
@@ -162,7 +162,7 @@ describe('RehabService', () => {
 
   describe('completeSession', () => {
     it('should complete session with progress', async () => {
-      mockPrisma.rehabSession.findUnique.mockResolvedValue({ id: 'rs-1' });
+      mockPrisma.rehabSession.findUnique.mockResolvedValue({ id: 'rs-1', status: 'IN_PROGRESS' });
       mockPrisma.rehabSession.update.mockResolvedValue({
         id: 'rs-1', status: 'COMPLETED', progress: '호전',
       });

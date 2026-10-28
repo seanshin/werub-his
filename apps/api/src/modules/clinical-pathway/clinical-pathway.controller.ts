@@ -127,8 +127,9 @@ export class ClinicalPathwayController {
   @Post(':id/retire')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '임상경로 폐기 (ACTIVE → RETIRED)' })
-  async retire(@Param('id', ParseUUIDPipe) id: string) {
-    return { data: await this.service.retire(id) };
+  async retire(@Param('id', ParseUUIDPipe) id: string, @Body() body?: PublishPathwayDto) {
+    // 공개판: 폐기도 발행처럼 의결 번호(decisionNo)를 함께 받을 수 있다
+    return { data: await this.service.retire(id, { decisionNo: body?.decisionNo ?? null }) };
   }
 
   @Post(':id/clone')

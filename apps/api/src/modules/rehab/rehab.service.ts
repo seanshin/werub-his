@@ -307,6 +307,8 @@ export class RehabService {
     await assertTherapyExecutor(this.prisma, opts?.userId, REHAB_EXECUTOR_PROFESSIONS);
     const session = await this.prisma.rehabSession.findUnique({ where: { id } });
     if (!session) throw new NotFoundException('세션을 찾을 수 없습니다');
+    // 공개판: 시작은 예정된 세션에서만 — 완료된 세션을 다시 시작하면 진행 중으로 돌아가고 시작 시각이 덮어써진다
+    if (session.status !== 'SCHEDULED') throw new BadRequestException('예정(SCHEDULED) 세션만 시작할 수 있습니다');
 
     const mode = gateMode(await this.configRuntime?.get('rehab.sessionGate'), 'OFF');
     let safetyChecks: object | undefined;
@@ -349,6 +351,11 @@ export class RehabService {
     await assertTherapyExecutor(this.prisma, userId, REHAB_EXECUTOR_PROFESSIONS);
     const session = await this.prisma.rehabSession.findUnique({ where: { id } });
     if (!session) throw new NotFoundException('세션을 찾을 수 없습니다');
+    // 공개판: 완료는 예정 · 진행 중 세션에서만(이미 완료 · 취소된 세션에 수가 코드가 다시 붙지 않게).
+    //    시작을 누르지 않고 바로 완료하는 흐름은 유지한다(그때 치료 시간은 사람이 적은 값만 쓴다).
+    if (session.status !== 'SCHEDULED' && session.status !== 'IN_PROGRESS') {
+      throw new BadRequestException('예정 · 진행 중 세션만 완료할 수 있습니다');
+    }
 
     // 청구코드 매핑: therapyType → EDI 수가 → 명칭·단가 해석
     const code = therapyBillingCode(session.therapyType);

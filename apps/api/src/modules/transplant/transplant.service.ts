@@ -1,9 +1,10 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { ConfigRuntimeService } from '../config/config-runtime.service';
 import { gateMode } from '../../common/gate-mode';
+import { recordGateViolation } from '../../common/gate-violation-record';
 import { TRANSPLANT_WAITLIST_STATUSES, isTransplantWaitlistStatus } from './transplant-waitlist-status';
 import { KONOS_CHANNEL, KONOS_NOT_IMPLEMENTED, type KonosRegisterResult } from './transplant-konos-channel';
 
@@ -16,6 +17,8 @@ function normAbo(v: unknown): 'A' | 'B' | 'O' | 'AB' | null {
 
 @Injectable()
 export class TransplantService {
+  private readonly logger = new Logger(TransplantService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly config?: ConfigRuntimeService,
@@ -147,6 +150,17 @@ export class TransplantService {
     else if (xm.result !== 'NEGATIVE') blocked.push(`교차시험이 음성(NEGATIVE)이 아닙니다(현재 ${xm.result}) — 초급성 거부 위험`);
     else if (!xm.validUntil || xm.validUntil.getTime() < Date.now()) blocked.push('교차시험 유효기간 경과 — 재검 필요');
 
+    // 공개판: 차단 · 경고 통과 모두 게이트 위반 원장에 남긴다(트랜잭션 밖 — 차단 롤백에도 보존).
+    //    응답에만 실으면 관제(`/admin/safety-gates`)가 이 게이트의 위반을 세지 못한다.
+    if (blocked.length > 0 && mode !== 'OFF') {
+      await recordGateViolation(this.prisma, this.logger, {
+        gateKey: 'transplant.compatEnforce',
+        severity: mode,
+        message: blocked.join(' / '),
+        refType: 'TransplantDonor',
+        refId: data.donorId,
+      });
+    }
     if (blocked.length > 0 && mode === 'BLOCK') {
       throw new BadRequestException({ code: 'TRANSPLANT_INCOMPATIBLE', message: `이식 불가: ${blocked.join(' / ')}`, blocked });
     }
