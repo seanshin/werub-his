@@ -163,7 +163,7 @@ node scripts/data-freshness.mjs               # 시드 시점 정합 판정
 
 ### PACS (OpenPACS 분리)
 
-PACS 는 별도 프로젝트다 → https://github.com/seanshin/openpacs
+PACS 는 별도 프로젝트다 → https://github.com/seanshin/werub-pacs
 
 - **금지**: `docker-compose.yml` 의 orthanc/ohif/backend 서비스 수정·삭제 ·
   Nginx `/pacs-api/`·`/dicom-web/`·`/wado`·`/pacs/`·`/viewer/` 경로 수정 ·
@@ -244,8 +244,8 @@ PACS 는 별도 프로젝트다 → https://github.com/seanshin/openpacs
 
 - [HospitalRun](https://hospitalrun.io) · [EtherCIS/EHRBase](https://ethercis.org) ·
   [Medplum](https://medplum.com) · [OpenMRS O3](https://openmrs.org)
-- [OpenPACS](https://github.com/seanshin/openpacs) — PACS 별도 프로젝트
-- [Hospital Jitsi](https://github.com/seanshin/hospital-jitsi) — WebRTC 서버 별도 프로젝트
+- [OpenPACS](https://github.com/seanshin/werub-pacs) — PACS 별도 프로젝트
+- [Hospital Jitsi](https://github.com/seanshin/werub-jitsi) — WebRTC 서버 별도 프로젝트
 
 ## License
 

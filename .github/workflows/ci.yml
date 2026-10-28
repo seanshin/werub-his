@@ -8,7 +8,7 @@ name: CI
 #    · 09-06~09-08 실패 20회는 **러너 할당 실패가 아니었다** — 잡이 `werub-prod-runner(-2)` 에 3초 안에 붙었고,
 #      `Unit tests (web)` 가 `TypeError: globSync is not a function`(Node 20 에 없는 API)로 **실제 실패**했다(가드 2파일 · 이후 readdirSync 로 교정됨).
 #    · 09-08 이후 실행 0 은 **워크플로가 `disabled_manually`** 이기 때문이다(워크플로 updated_at 2026-09-08T01:47Z = 마지막 실행 57분 뒤).
-#      이 파일을 아무리 고쳐도 **재활성화 전에는 한 번도 돌지 않는다** — `gh workflow enable CI -R seanshin/werubyHIS`(사람 몫).
+#      이 파일을 아무리 고쳐도 **재활성화 전에는 한 번도 돌지 않는다** — `gh workflow enable CI -R seanshin/werub-his`(사람 몫).
 #    · 이 워크플로의 세 잡은 2026-09-13 로컬에서 CI 와 같은 조건(.env·HIS_MODE·DATABASE_URL 없음·빈 PG16)으로 재현해 통과를 확인했다
 #      (근거 `docs/05-reference/ci-runners.md` §재실측) — 원격 초록의 증거는 아니다.
 # 🔴 Node 는 `.nvmrc`(22 — 서버 빌드 v22.22.1 과 일치) 하나에서 읽는다. 종전 "20" 은 로컬 25·서버 22 와 갈라져 있었다.
