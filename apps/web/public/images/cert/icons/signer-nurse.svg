@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <!-- Medical cross -->
+  <rect x="5" y="8" width="14" height="8" rx="2" fill="none" stroke="#6B7280" stroke-width="1.8"/>
+  <rect x="9" y="4.5" width="6" height="15" rx="2" fill="none" stroke="#6B7280" stroke-width="1.8"/>
+  <!-- Cross fill (inner) -->
+  <rect x="10.5" y="10" width="3" height="4" rx="0.5" fill="#6B7280"/>
+  <rect x="9" y="10.5" width="6" height="3" rx="0.5" fill="#6B7280"/>
+  <!-- Small pen -->
+  <g transform="translate(19, 15) rotate(30)">
+    <rect x="-1" y="0" width="2" height="6" rx="0.5" fill="#6B7280"/>
+    <path d="M-1 6 L0 8 L1 6" fill="#6B7280"/>
+    <rect x="-1.3" y="-0.5" width="2.6" height="1.8" rx="0.5" fill="#9CA3AF"/>
+  </g>
+</svg>

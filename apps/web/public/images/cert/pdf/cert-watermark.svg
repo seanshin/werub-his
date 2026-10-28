@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" fill="none">
+  <g opacity="0.1">
+    <!-- Large diagonal CERTIFIED text -->
+    <text x="300" y="320" text-anchor="middle" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#9CA3AF" transform="rotate(-35 300 300)" letter-spacing="12">CERTIFIED</text>
+
+    <!-- Hospital RUN logo pattern - row 1 -->
+    <g transform="translate(80, 80)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+    <g transform="translate(280, 80)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+    <g transform="translate(480, 80)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+
+    <!-- Row 2 -->
+    <g transform="translate(180, 200)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+    <g transform="translate(380, 200)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+
+    <!-- Row 3 -->
+    <g transform="translate(80, 400)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+    <g transform="translate(280, 400)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+    <g transform="translate(480, 400)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+
+    <!-- Row 4 -->
+    <g transform="translate(180, 520)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+    <g transform="translate(380, 520)">
+      <rect x="-6" y="-3" width="12" height="6" rx="1" fill="#9CA3AF"/>
+      <rect x="-3" y="-6" width="6" height="12" rx="1" fill="#9CA3AF"/>
+      <text x="18" y="4" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#9CA3AF">HR</text>
+    </g>
+  </g>
+</svg>

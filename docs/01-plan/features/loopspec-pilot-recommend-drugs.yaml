@@ -1,0 +1,436 @@
+# LoopSpec L1 역기술 파일럿 A — `recommendDrugs`(약물추천 · AI 출력을 정본 서비스로 재검증)
+#
+# 목적: L0(`interpret-lab`)이 "AI 조회 → 초안 반환" **한 종류**만 봤기 때문에, 다른 축의 루프를
+#       역기술해 표현 불가 목록이 **구조적인지 국소적인지** 가른다. 정본 = `loop-platform-adoption.plan.md` §4-L1.
+# 이 축이 L0 와 다른 점:
+#   · LLM 출력을 **정본 서비스(DUR·약가마스터)로 재검증**하고 그 판정을 항목마다 붙인다(`drug-verdict.ts`).
+#   · `write_back` 은 없는데 **판정이 화면 동작을 바꾼다**(BLOCK/UNRESOLVED → 처방 폼 프리필 버튼 비활성).
+#   · 검증 실패 사유에 따라 **조건부 재호출**이 있고 그것이 시간 예산에 묶여 있다.
+#
+# 작성 2026-08-20 · 스키마 원본은 저장소 밖(`~/Downloads/loopspec.schema.json`) — 복사하지 않는다(§0 규약).
+# 🔴 작성 규칙은 L0 파일과 같다: 실물에서 읽은 값만 · 모르는 값/하드락은 **비운다** · 표현 손실은 `# 🔴` 로 남긴다.
+#    (검증: `node scripts/loopspec-validate.mjs ~/Downloads/loopspec.schema.json docs/01-plan/features/loopspec-pilot-recommend-drugs.yaml`)
+
+apiVersion: loop.hospital/v1
+kind: Loop
+
+metadata:
+  # 근거: 스킬 키 `recommendDrugs`(common/ai-skill-quality.ts:35) · 감사 resourceType
+  #       `AiRecommendDrugs`/`AiRecommendDrugsOutcome`(medical-ai.controller.ts:428,430)
+  # ⚠️ 실물에 "루프 ID" 개념은 없다 — 위 식별자에서 유도한 이름이다.
+  id: rx.recommend-drugs
+  name: 약물추천 # 근거: AI_QUALITY_SKILLS label(common/ai-skill-quality.ts:35)
+  description: >-
+    진단명과 환자 맥락(연령·성별·알레르기 3상태·현재 약물·활성 문제·최근 30일 검사·원내 ACTIVE 약속처방 30건)을
+    LLM 에 보내 2~4건의 약물 추천을 받고, **추천 1건마다 약가마스터로 특정한 뒤 DUR 정본(`DurService.checkInteractions`)을
+    다시 돌려** `durVerdict`(PASS/WARNING/BLOCK/UNRESOLVED/null)와 특정 방식(`resolution`)을 붙인다.
+    LLM 이 적은 `cdssCheck: "PASS"` 는 판정으로 쓰지 않고 `modelNote` 로 강등한다(medical-ai.service.ts:1461).
+    결정론 검증 6규칙을 통과한 것만 `source: AI`.
+
+  # ── 비워 둔 필수 필드 ───────────────────────────────────────────────────────────
+  # version: (required) ⚠️ 실물에 **없음**. L0 과 같다 — 프롬프트도 검증규칙도 코드와 함께 배포되고
+  #          감사행에 `prompt_version`/`model_id` 가 없다(controller:232-235 `outcomeMeta` 4키뿐).
+  #          🔴 이 루프에서는 그 부재가 L0 보다 더 아프다: 프롬프트의 **출력 필드 계약**(`ingredient` 를
+  #          system 메시지로 올린 것 · service:1434-1436)이 실측으로 정해졌는데(5진단 0/5 → 12/12),
+  #          그 실측이 어느 프롬프트 버전의 것인지 적을 자리가 없다.
+  #
+  # owners: (required) ⚠️ 실물에 **없음**(CODEOWNERS 파일 부재 — L0 에서 실측).
+  #         🔴 이 루프는 임상 오너가 둘로 갈린다(약제위원회 = DUR 룰·포뮬러리 / 진료부 = 추천 프롬프트).
+  #            `owners.clinical` 은 문자열 하나라 그 사실을 적을 수 없다.
+  #
+  # approvals: ⚠️ 위원회 승인 이력 **없음**. L0 과 같은 상태(optional 이라 스키마는 통과한다).
+
+  lifecycle: general
+  # 근거: `POST /api/v1/ai/recommend-drugs` 가 DOCTOR·ADMIN·NURSE 전원에게 열려 있고
+  #       (medical-ai.controller.ts:424) 부서·병동 제한이 없다. shadow/limited 를 거친 적이 없다.
+  # 🔴 표현 손실(U17 확장) — 실물의 "켜짐"은 config **곱**이다:
+  #    `ai.server.enabled`(기본 ON) × `ai.skill.quality.action.recommendDrugs`(기본 **OFF**)
+  #    × `ai.skill.quality.maxUnresolvedDrugRatio`(기본 0.5 · service:1355-1357)
+  #    × `dur.enforce`(기본 BLOCK — 이건 이 루프가 아니라 **처방 파이프**의 게이트다).
+  #    앞의 셋은 이 루프의 동작을 바꾸고 넷째는 바꾸지 않는데, `lifecycle` 은 그 구분을 담지 못한다.
+
+  authoring:
+    generated_by: llm_draft
+    generator_version: claude-opus-5-1m/loopspec-l1-pilot-2026.08.20
+    source_request: >-
+      LoopSpec L1 표현력 판정 — 서로 다른 축의 실물 3개를 역기술해 표현 불가 목록을 폭으로 확장하라
+      (loop-platform-adoption.plan.md §4-L1). 이 파일은 축 A(AI 출력의 정본 재검증).
+    # reviewed_by / reviewed_at: 미검토 → L22 ERROR 대상. 의도적으로 비운다.
+
+spec:
+  audience:
+    subject: clinician
+    roles:
+      # 근거: `@Roles(UserRole.DOCTOR, UserRole.ADMIN, UserRole.NURSE)`(medical-ai.controller.ts:424)
+      - ATTENDING
+      - RESIDENT
+      - WARD_NURSE
+      - CHARGE_NURSE
+      - ADMIN_STAFF
+      # 🔴 표현 손실 A(U21 **재확인**) — enum 에 `ADMIN`(시스템 관리자)이 없다. 위 `ADMIN_STAFF` 는
+      #    우리 RBAC 의 원무·행정 직군이라 **다른 역할**이다. 정직한 매핑이 불가능해 허위 정밀도가 된다.
+      # 🔴 표현 손실 B(U2 **재확인 · 더 심함**) — 두 번째 진입 경로
+      #    `GET /api/v1/pharmacy/orders/:orderId/ai-review`(pharmacy.controller.ts:352)는
+      #    클래스 `@Roles(PHARMACIST, ADMIN)`(pharmacy.controller.ts:19)을 상속한다.
+      #    즉 **같은 스킬을 부르는 두 경로의 역할 집합이 교집합이 ADMIN 하나뿐**이다.
+      #    `roles` 는 루프당 하나라 이것을 적을 수 없다.
+    # scope: 생략 — 부서·병동 제한이 실물에 없다. (U19 — "제한 없음"을 주장으로 적을 자리가 없다)
+
+  lane: sync
+  # 근거: 의사가 버튼을 누르고 기다린다(AiAssistantPanel.tsx:612-628 `handleRecommendDrugs`).
+  # 🔴 표현 손실(U2 축) — 두 번째 경로(약국 `ai-review`)는 **약사가 조제 화면을 열면 자동으로 나가는 GET** 이다
+  #    (`useQuery` · staleTime 5분 · pharmacy/page.tsx:598-601 · workstation/pharmacy/page.tsx:500).
+  #    사람이 버튼을 누르는 첫 경로와 달리 **화면 진입만으로** LLM 이 불린다 — lane 도 트리거도 다르다.
+  #    🔴 그리고 그 화면은 응답의 `source` 를 그대로 그리는데(page.tsx:620 `AiSuggestionPanel source=…`),
+  #       그 값은 봉투의 `source` 가 아니라 `pharmacy.service.ts:48` 이 **무조건 붙이는 `'AI'`** 다
+  #       → 검증층이 탈락시킨 결과(FALLBACK)도 약국 화면에서는 "AI" 로 보인다(§4-L1 부수 결함 표).
+
+  risk:
+    # tier: (required) 🔴 **하드락(§6.2) ∩ required**(U11 재확인). 비운다.
+    #   실물 근거만 적자면 이 루프는 L0 보다 tier 가 높게 읽힌다 — 약물·용량·금기를 LLM 이 만들고
+    #   (service:1425-1429) 그 결과가 **처방 폼 프리필로 이어진다**(AiAssistantPanel.tsx:1237).
+    #   다만 판정은 위원회 몫이다.
+    ai_disclosure:
+      required: true
+      # 근거: `withDisclaimer`(service:1481) + FE `AI_ORIGIN_TEXT`("AI(WeRU.B)") 버튼 라벨
+      #       (AiAssistantPanel.tsx:1206 · packages/shared/src/ai-brand.ts).
+      # 🔴 표현 손실(L0 과 동일) — 문구 정본은 config `ai.disclaimer` 인데 `text` 는 리터럴만 받는다.
+      #    `text_ref`(config 키 참조) 슬롯이 없어 적으면 정본이 둘이 된다 → 비운다.
+    # samd_assessment: 🔴 하드락 — 비운다.
+    privacy:
+      external_model_transfer: false
+      # 🔴 스키마 위반을 **일부러** 남긴다. 사람 결정(2026-08-20): AI 서버는 원내(WeRU.B) →
+      #    계획서 §4-L0 는 "명시적으로 `false` 를 적는다"고 못박았다. 그런데 이 필드의 enum 은
+      #    FORBIDDEN|TOKENIZED_ONLY|ALLOWED_IN_REGION 세 문자열뿐이라 **`false` 를 담을 값이 없다.**
+      #    → run A 의 FAIL 목록에 이 줄이 나타나는 것 자체가 산출물이다(U14 확장: "원내 처리"가 enum 에 없다).
+      # sensitive_categories: 🔴 적을 수 없다 — 민감범주 필터가 실물에 없다.
+      #   이 루프는 `currentMedications`(활성 처방명)를 프롬프트에 그대로 싣는다(service:1418).
+      #   정신과약·HIV 약·중독치료제가 섞여 있어도 가리지 않는다. 빈 배열은 "해당 없음"이라는 **다른 사실**이다.
+
+  triggers:
+    # 🔴 L0 과 **같은 자리에서 걸린다**(U1 재확인 = 구조적).
+    #  (1) 사람이 '약물 추천' 버튼을 누른다 — AiAssistantPanel.tsx:1204(버튼) → :612(핸들러).
+    #      전제 게이트: `soap.assessment`(A 항목)가 비면 부르지 않는다(:613 · :1204 `disabled`).
+    #      🔴 `Trigger.hook` enum 9종에 "이 버튼을 눌렀다"가 없다. `note-open` 은 거짓(패널 기본 접힘 :339),
+    #         `order-select` 도 거짓(오더를 고른 것이 아니라 **진단을 적은 것**이 전제다).
+    #  (2) `GET /api/v1/pharmacy/orders/:orderId/ai-review` — 약국·워크스테이션 화면이 마운트되면
+    #      `useQuery` 가 자동으로 부른다(pharmacy/page.tsx:598 · workstation/pharmacy/page.tsx:500).
+    #      화면 진입이 트리거라 `hook` 계열에 가깝지만 enum 9종에 "조제 화면 진입"이 없다
+    #      (`worklist-render` 는 목록 렌더이고 이건 오더 상세 패널이다).
+    #
+    # 🔴 그 결과 이 루프는 **적을 수 있는 트리거가 하나도 없다.** 그런데 `triggers` 는 `minItems: 1` 이다.
+    #    L0 은 야간 배치(schedule)가 우연히 있어 최소 개수를 채웠을 뿐이다 —
+    #    "표현 가능한 트리거가 하나뿐"(R8)이 아니라 **0개**인 루프가 실재한다는 것이 이 축의 산출물이다.
+    #    → 아래는 스키마를 통과시키기 위한 값이 아니라, **비워 두면 무엇이 실패하는지 보이기 위해** 비운다.
+    []
+
+  eligibility:
+    include:
+      - id: HAS_ASSESSMENT
+        expr: soap.assessment.nonEmpty
+        note: >-
+          근거 AiAssistantPanel.tsx:613,1204 — 진단(A)이 비면 호출하지 않는다. 🔴 이 게이트는 **FE 에만** 있다.
+          BE 는 `@IsNotEmpty()`(dto/medical-ai.dto.ts:284)로 빈 문자열만 막고, 두 번째 경로는
+          `chiefComplaint ?? ''`(pharmacy.service.ts:43)를 진단으로 넘겨 **빈 문자열이면 400**이 된다.
+          🔴 `expr` 은 "FHIRPath 또는 등록된 룰 ID"인데 우리에겐 Rule Catalog 가 없다 → L11 ERROR(미등재 참조).
+    # exclude: 없음 — 제외 조건이 실물에 없다.
+    # consent: 🔴 L0 과 동일 — 이 경로에 환자 동의 확인이 없다. enum 에 "동의 개념 미구축"이 없어 블록째 생략한다.
+
+  context:
+    auth:
+      # 🔴 표현 손실(U3 **재확인 = 구조적**) — enum 두 값 중 어느 것도 사실이 아니다.
+      #   컨트롤러가 역할만 확인하고(medical-ai.controller.ts:424) 서비스는 **서버 자격**으로 Prisma 를 읽는다
+      #   (service:1382-1388 · 1406-1411). 사용자 권한 ∩ 루프 스코프 교집합이 없다.
+      #   🔴 이 루프에서 더 위험한 이유: 재검증이 `DurService.checkInteractions` 를 **서버 자격으로** 호출해
+      #      다른 진료의 처방·임신 정보를 읽는다(drug-verdict.ts:489). `on_behalf_of` 를 적으면
+      #      "사용자 권한으로 DUR 을 돌렸다"는 **없는 통제**를 산출물이 선언한다.
+      #   → required 필드 `mode` 를 비운다(= 검증 실패로 드러낸다).
+      patient_binding: session_bound
+      # 근거: `dto.patientId`(controller:428). 🔴 L0 과 같은 유보 — 세션이 아니라 **요청 본문**이 정하고
+      #    DTO 는 `@IsString()`+`@IsNotEmpty()` 뿐이라 UUID 검사도 없다(dto:277-280).
+
+    resources:
+      - ref: prisma.patient.findUnique.demographics
+        purpose: 연령·성별을 프롬프트에 넣고 출력의 성별·연령 부적합 표현을 검증(SEX_AGE)한다
+        fields: [dateOfBirth, gender]
+        # 근거: service:1383-1386. (L0 과 달리 여기서는 이름을 조회하지 않는다 — 최소수집이 지켜진 자리)
+      - ref: brief.allergy
+        purpose: 알레르기 금기를 추천에 반영하고 3상태(미문진/없음확인/조회불가)를 프롬프트에 그대로 말한다
+        # 근거: service:1396 `ctx.allergyLine` ← `allergyPromptLine`(ai-grounding.ts)
+        # 🔴 표현 손실(U15 확장 · **신규 N6**) — 이 리소스는 **호출자 입력이 있으면 대체된다**:
+        #    `clientAllergies.length ? clientAllergies.join(', ') : ctx.allergyLine`(service:1395-1396).
+        #    호출자가 `patientContext.allergies` 를 1건이라도 보내면 서버 3상태 정본이 **평문 목록으로 교체**되고
+        #    "미문진"과 "없음 확인"의 구분이 사라진다. `context.resources` 에는 **우선순위(precedence)** 를
+        #    선언할 슬롯이 없다 — 화이트리스트는 "무엇을 볼 수 있는가"만 말하지 "무엇이 그것을 덮는가"를 못 말한다.
+      - ref: brief.activeMedications
+        purpose: 병용금기·상호작용을 추천에 반영하기 위해
+        limit: 50
+        # 근거: patient-brief.service.ts:115(take 50) → service:1399,1418
+        # 🔴 같은 대체 규칙(`params.patientContext?.currentMedications ?? ctx.activeMedications` · service:1399)
+      - ref: brief.activeProblems
+        purpose: 약물-질환 금기를 반영하기 위해
+        limit: 30
+        # 근거: patient-brief.service.ts:116 → service:1402,1419
+      - ref: brief.recentLabs
+        purpose: 신기능·전해질·간기능에 따른 용량 조정을 반영하기 위해
+        lookback: P30D
+        limit: 10
+        # 근거: patient-brief.service.ts:117-121 → service:1403,1420
+        # 🔴 L0 과 같은 이중 상한(조회 10건 → 항목별 최신 → 20항목 절단 · service:943). `limit` 은 하나뿐이다.
+      - ref: prisma.orderSet.findMany.active
+        purpose: orderSetSuggested 를 원내 실재 코드로 강제해 자유 텍스트 환각을 막기 위해
+        limit: 30
+        # 근거: service:1406-1412(`isActive && status ACTIVE` · `orderBy useCount desc` · take 30)
+        # 🔴 표현 손실 — 이 리소스는 **환자 데이터가 아니라 원내 마스터**다(RAG 성격에 가깝다).
+        #    `context.knowledge`(RAG 컬렉션·승인자·유효기간)에 담을 수도 있으나 그쪽은 `collection` 문자열만
+        #    받는다. 어느 쪽에 넣어도 "이 목록은 프롬프트에 통째로 주입되고 **출력이 그 안의 code 로 강제 재검증된다**"
+        #    (service:1447-1453)는 사실이 사라진다.
+
+    # 🔴 표현 불가(U15 **재확인 = 구조적**) — 이 루프의 **주 입력이 리소스 조회가 아니다.**
+    #    ① `diagnosis` — 의사가 타이핑한 SOAP A 항목이 **그대로**(AiAssistantPanel.tsx:618 → service:1415).
+    #    ② `patientContext.{age,eGFR,allergies,currentMedications}` — DTO 가 `@IsOptional()` 뿐이고
+    #       **항목 검증이 없다**(dto:287-294 — `@ValidateNested`/`@Type` 부재. L0 의 `results[]` 와 같은 계열).
+    #       eGFR 은 검증 없이 프롬프트의 용량 판단 근거가 된다(service:1417).
+    #    `context.inputs[]`(스키마·근거 게이트·거부 조건) 슬롯이 없다.
+
+    # precompute: 생략 — 이 루프에는 사전계산이 없다(브리핑을 **읽기만** 한다).
+    # 🔴 표현 손실(**신규 N11** · 루프 합성) — 실제로는 있다. `skillContext`(service:930-950)가
+    #    다른 루프(`brief.patient-brief`)의 **출력을 컨텍스트로 받아** 쓰고, 그 신선도를
+    #    `groundedOn: 브리핑(<trigger> <computedAt>)` 으로 이어받는다. LoopSpec 에는
+    #    "다른 루프의 산출물을 리소스로 쓴다"를 선언할 자리가 없다 — `resources[].ref` 는 카탈로그의
+    #    **쿼리 ID** 이지 루프 ID 가 아니다. 위 `brief.*` 표기는 내가 만든 것이고 실물 카탈로그가 아니다.
+
+    redaction:
+      tokenize: []
+      # 근거: 이 경로에 토큰화가 없다(`redactIdentifiers` 미호출 — service 내 호출 1회, 영상 판독 전용).
+      # 🔴 표현 손실(U18 **재확인**) — `diagnosis` 는 의사가 타이핑한 자유 텍스트이고,
+      #    그 값이 **감사 원장에도 평문으로 들어간다**(controller:428 `{ diagnosis: dto.diagnosis }`
+      #    → `egressSummary` → `AuditLog.changes.egress.new`). `redaction` 은 프롬프트 쪽만 가정하고
+      #    `audit.record` 에도 "무엇을 남기지 않을 것인가"를 적을 자리가 없다.
+
+  reasoning:
+    # model_class: 🔴 L0 과 동일 — 상류가 고른다(`quality_check:true` · service:530-549) + 하드코딩 폴백.
+    #   enum 에 "상류 위임 — 알 수 없음"이 없다.
+    # prompt_template: 🔴 인라인 템플릿 리터럴(service:1414-1429) + **system 메시지 2~3개**(1436-1438).
+    #   🔴 표현 손실(**신규 N5**) — 이 루프의 안전은 프롬프트의 **출력 필드 계약**에 걸려 있다:
+    #      `ingredient`(영문 INN 1개·상품명/함량/염 금지)를 **system 으로 올려야** 모델이 지킨다
+    #      (실측 5진단 0/5 → 12/12 · service:1434-1435 주석). 그리고 그 필드가 없으면
+    #      성분 경로 특정이 통째로 약해진다(drug-verdict.ts `ingredientHint`).
+    #      `prompt_template` 은 불투명한 레지스트리 ID 하나라 "이 템플릿은 필드 X 를 보장해야 하고
+    #      그 보장은 규칙 Y 가 검사한다"는 **계약**을 적을 수 없다.
+    max_steps: 1
+    # 근거: 추론 단계는 1이다. 🔴 그러나 **모델 호출 횟수는 최대 3회**다(아래 verification 참조) —
+    #    `max_steps` 는 그 축이 아니고, 호출 횟수를 담는 슬롯은 스키마에 없다.
+    require_anchor_per_sentence: false
+    # 근거: 앵커 개념 없음. `groundedOn` 6축을 응답 단위로 낸다(service:1393).
+    # on_insufficient_evidence: 🔴 L0 과 동일 — 3상태 봉투(AI/FALLBACK/UNAVAILABLE)가 enum 에 없다.
+    #   이 루프의 최종 폴백은 `failedSkill(..., 'EMPTY_RESULT')`(service:1528) — **빈 추천 목록**을
+    #   `source: FALLBACK` 으로 말한다. `return_empty`(빈 결과를 성공으로)와는 다른 동작이다.
+    determinism:
+      threshold_evaluation: deterministic_rules_only
+      # 근거(L0 과 **반대**): 이 루프의 임계 판정은 LLM 이 하지 않는다 —
+      #   `verdictFromWarnings`(drug-verdict.ts:434-439)가 DUR 경고의 severity 로 PASS/WARNING/BLOCK 을 정하고,
+      #   LLM 이 적은 `cdssCheck` 는 판정에서 **제거**된다(service:1461).
+      # 🔴 그런데 이 값이 안전을 증명하지 못한다 — `contraindicated[]`(금기/주의 문장)는 여전히 LLM 이 만들고
+      #    화면이 빨강 박스로 그린다(AiAssistantPanel.tsx:1262-1268). `threshold_evaluation` 은 boolean 성
+      #    단일 값이라 "판정은 결정론, 경고 문구는 LLM"을 구분해 적을 수 없다.
+      llm_roles:
+        - drafting
+        - phrasing
+      # 🔴 표현 손실 — 실물의 역할은 "약물 후보 생성"이다. enum 6종
+      #    (signal_extraction/phrasing/suppression_assist/summarization/query_understanding/drafting)에
+      #    `drafting` 이 가장 가깝지만 그것은 **기록 초안**을 뜻한다(설계서 §1). 임상 선택지 생성이 아니다.
+
+  tools:
+    allow: []
+    # 🔴 표현 불가(**신규 N1 — 이 축의 가장 큰 산출물**).
+    #    이 루프는 LLM 에게 툴을 주지 않는다(`allow: []` 는 사실이다). 그런데 **응답을 받은 뒤**
+    #    서버가 항목마다 두 개의 정본을 호출한다:
+    #      ① 약가마스터 검색 `buildMedicationSearchWhere`(drug-verdict.ts:377-430 `resolveMedicationCode`)
+    #      ② DUR 정본 `DurService.checkInteractions`(drug-verdict.ts:489)
+    #    LoopSpec 에서 툴은 **모델에게 주입되는 것**이고(설계서 §3.3 "여기 없는 툴은 모델의 세계에 존재하지 않는다"),
+    #    `verification` 은 `rules`(문자열)·`numeric_crosscheck`(boolean)·`citation_required`·`second_model` 뿐이다.
+    #    → **"모델이 말한 것을 정본 서비스로 되받아 판정하는 층"을 선언할 자리가 스키마에 없다.**
+    #    이것을 적지 못하면 컴파일러가 만드는 파이프라인에는 재검증이 없고, 화면에 남는 것은
+    #    LLM 이 적은 `cdssCheck:"PASS"` 뿐이다 — 우리가 정확히 그 상태에서 봉합해 온 것이다.
+
+  output:
+    kind: card
+    # 근거: 사이드 패널 카드(AiAssistantPanel.tsx:1209-1291).
+    # schema_ref: 생략 — 출력 스키마 레지스트리가 없다.
+    presentation:
+      surface: side_panel
+      intensity: passive
+      actions:
+        - label: 처방 폼에 채우기
+          tool_ref: ui.prescription-form.prefill
+          style: secondary
+          # 근거: AiAssistantPanel.tsx:1237 `onOrderDrug(resolvedName||name, dosage, medicationCodeId)`.
+          # 🔴 표현 손실 A(**신규 N3**) — 이 액션은 **판정에 따라 비활성**이다:
+          #    `blocked = durVerdict === 'BLOCK' || durVerdict === 'UNRESOLVED'`(:1231)이고
+          #    비활성 사유를 `title` 로 말한다(:1232-1234). `actions[]` 에는
+          #    `enabled_when`/`disabled_when`/`reason_text` 슬롯이 없다 →
+          #    컴파일러가 UI 를 생성하면 **BLOCK 약을 처방 폼에 채울 수 있는 버튼**이 나온다(역방향 손실).
+          # 🔴 표현 손실 B — `tool_ref` 는 Tool Registry ID 를 요구하는데 이것은 서버 툴이 아니라
+          #    **화면 상태 전이**(처방 탭 전환 + 검색어 프리필)다. 실제 처방 확정은 처방 폼의 DUR 게이트가
+          #    따로 강제한다(`dur.enforce=BLOCK`). "이 액션은 기록을 만들지 않는다"를 적을 자리가 없다.
+        - label: 약속처방 적용
+          tool_ref: ui.order-set.apply
+          style: primary
+          # 근거: AiAssistantPanel.tsx:1277-1284 `onApplyOrderSet(items, id, {name, ageGroup, contraindications})`
+          #       — 서버가 DB 재검증으로 실재 확인한 `orderSet` 이 있을 때만 렌더된다(service:1447-1453).
+      show_sources: true
+      # 근거: `groundedOn` 6축(service:1393) → `SkillNotice`(AiAssistantPanel.tsx:1211)
+      show_coverage_note: true
+      # 근거: 잘린 답변 고지·`groundedOn` 나열(L0 과 같은 봉투).
+    write_back:
+      target: none
+      # 근거: 이 루프는 EMR 에 아무것도 쓰지 않는다.
+      # 🔴 표현 손실 — 그런데 **감사 원장에는 쓴다**(controller:428,430 `auditAiEgress` 2행: 호출·결과).
+      #    `write_back` 은 임상 기록만 가정하고, `audit.record` 는 "무엇을 기록할지"만 말한다.
+      #    "출력이 원장에 남지만 임상 기록은 아니다"를 적을 자리가 없다.
+    # 🔴 표현 손실(U4 **재확인 = 구조적**) — 출력 봉투에 슬롯이 없다:
+    #    `source`/`reason`/`verify.{passed,failed}`/`latencyMs`/`groundedOn`/`cached`/`cachedAt`(ai-verify.ts:19-26).
+    # 🔴 표현 손실(**신규 N2**) — 이 루프는 봉투 위에 **항목 단위 판정**을 더 얹는다:
+    #    `durVerdict: PASS|WARNING|BLOCK|UNRESOLVED|null` × `resolution: EXACT|INGREDIENT_GROUP|AMBIGUOUS|NONE|(없음)`
+    #    (drug-verdict.ts:16-41). 두 축의 의미가 다르다 —
+    #      · `UNRESOLVED` = 약을 특정하지 못했다(판정 대상이 없다)
+    #      · `null`       = 재검증 자체를 못 했다(DUR 미주입·예외) — **PASS 가 아니다**(drug-verdict.ts:32,463,507)
+    #      · `resolution` 부재 = 어디까지 갔는지도 모른다(:24)
+    #    `output.kind: card` 아래에는 항목 판정 어휘를 선언할 자리가 없고, `schema_ref` 는 페이로드 모양만 가리킨다.
+    #    → 자동 생성 UI 는 세 가지 "모른다"를 구분해 그릴 수 없다.
+
+  verification:
+    rules:
+      # 근거: service:1486-1493 이 넘기는 6검사(호출 순서 그대로).
+      - NON_EMPTY:recommendations
+      - KOREAN
+      - MIXED_SCRIPT
+      - SEX_AGE
+      - DRUG_NAME_SCRIPT
+      - DRUGS_RESOLVABLE
+      # 🔴 표현 손실 A(U6 **재확인 = 구조적**) — 파라미터가 사라진다. `DRUGS_RESOLVABLE` 의 임계는
+      #    **런타임 config** `ai.skill.quality.maxUnresolvedDrugRatio`(기본 0.5 · service:1355-1357)에서 오고,
+      #    `KOREAN` 은 0.3(ai-verify.ts:38). `rules: [string]` 에는 임계도 config 참조도 적을 수 없다.
+      # 🔴 표현 손실 B(**신규 N1 의 귀결**) — `DRUGS_RESOLVABLE` 의 입력은 **모델 출력이 아니다.**
+      #    그것은 위 재검증층이 붙인 `resolution` 이다(ai-verify.ts:126-142 — 여기서 다시 조회하지 않는다).
+      #    설계서 §3.8 의 검증 체인(raw_output → 룰 → 수치대조 → 인용 → 2차모델)에는
+      #    **"정본 재해석 단계"가 없다** → 이 규칙은 컴파일된 파이프라인에서 입력을 잃는다.
+      # 🔴 표현 손실 C — 분모 규약이 규칙 안에 있다: 빈 목록은 통과(NON_EMPTY 가 잡는다) ·
+      #    `resolution` 미기록이면 통과("모르는 것을 위반으로 세지 않는다") · `AMBIGUOUS` 는 미매칭이 아니다 ·
+      #    detail 은 `미매칭 n/N` 으로 **분모를 함께** 낸다(ai-verify.ts:120-142). 전부 적을 자리가 없다.
+      # 🔴 표현 손실 D — 실물은 전 규칙을 평가하고 **실패 집합 전체**를 낸다(ai-verify.ts:228-232).
+    numeric_crosscheck: false
+    # 근거: 출력에 원본 EMR 수치를 다시 싣지 않는다(용량은 LLM 이 만든 문자열이다).
+    # 🔴 그런데 그 용량 문자열이 **DUR 에 그대로 넘어간다**(`doseCtx.dosage` · drug-verdict.ts:489).
+    #    "모델이 만든 값이 정본 판정의 입력이 된다"를 `numeric_crosscheck: boolean` 으로는 표현할 수 없다.
+    citation_required: false
+    # 🔴 실물은 `guideline` 필드를 요구하지만(service:1427) **검증하지 않는다** — 화면은 "근거:" 로 그린다
+    #    (AiAssistantPanel.tsx:1247). `citation_required: true` 로 적으면 있지도 않은 인용 검증을 선언하게 된다.
+    second_model:
+      enabled: false
+    # on_fail: 🔴 U5 **재확인** — enum 4값 중 실물 동작이 없다. 본문을 지우지 않고 `FALLBACK` +
+    #   `VERIFY_REJECTED:<첫 실패 규칙>` 으로 표시한다(ai-verify.ts:236-241). 필요한 값은 `label_and_degrade`.
+    #
+    # 🔴 표현 불가(**신규 N4**) — 이 루프의 실패 처리는 **규칙별 조건부 재호출**이다:
+    #   ① `KOREAN` 단독 실패 && 경과 < 20초 → 교정 system 메시지로 1회 재호출(service:1503-1506)
+    #   ② `DRUGS_RESOLVABLE` 실패 && 경과 < 20초 → **매칭 실패한 성분명을 이름으로 알려주고** 1회 재호출
+    #      (service:1510-1522). 그리고 "후보를 제안하지 않는다"는 안전 규약이 주석으로만 있다(:1507-1508) —
+    #      비슷한 이름을 제안하면 "지어낸 약"이 "그럴듯한 다른 약"으로 바뀔 뿐이라는 판단이다.
+    #   ③ 재호출 결과는 `source === 'AI'` 일 때만 채택한다(:1505,1520) — 아니면 원래 FALLBACK 을 유지.
+    #   `on_fail` 은 루프당 **단일 enum** 이라: 규칙별 분기도, 시간 예산 조건(20초·게이트웨이 60초 방지)도,
+    #   재호출 프롬프트의 내용 규약도 적을 수 없다. `regenerate_once_then_handoff` 를 적으면
+    #   **모든 실패에 대해 무조건 재생성**하는 파이프라인이 나온다(실측상 504 를 유발한 그 동작이다 · :1502).
+    human_sampling_rate: 0
+    # 근거: 사후 인적 검토 표본 큐가 없다(L0 과 동일). 0 은 사실이다.
+
+  # escalation: 생략 — 레드플래그·상향 사다리·인계 SLA 가 없다.
+  # 🔴 그런데 `durVerdict: BLOCK`(병용금기·임부금기 ERROR)이 나와도 **아무에게도 통보되지 않는다**.
+  #    화면이 버튼을 비활성화할 뿐이다. "이 축의 경보는 처방 파이프의 DUR 게이트가 담당한다"를
+  #    선언할 자리가 없어(L0 과 같은 자리), 생략은 "책임 분담"이 아니라 "누락"과 구분되지 않는다.
+
+  budgets:
+    latency:
+      # p95_ms: (required) 🔴 실물에 지연 예산이 **없다**(측정만 · service `skillMetrics`).
+      #   다만 이 루프에는 예산 비슷한 것이 하나 있다 — 재호출 컷오프 20초(service:1503,1510).
+      #   그것은 사용자 대기 예산이 아니라 **게이트웨이 60초 타임아웃을 넘기지 않기 위한 내부 컷**이다.
+      #   슬롯이 하나뿐이라 둘 중 무엇을 적어도 거짓이 된다 → 비운다.
+      timeout_ms: 120000
+      # 근거: `llmTimeoutMs = 120_000`(service:89). ⚠️ 호출 1회 타임아웃이고,
+      #    이 루프는 최대 **3회** 부를 수 있어 이론상 360초다 — 그런데 게이트웨이는 60초다(:1502 주석).
+      #    `timeout_ms` 하나로는 이 모순을 적을 수 없다.
+      on_timeout: fallback_message
+      # 근거: 실패하면 빈 추천 + `source: FALLBACK`·`EMPTY_RESULT`(service:1528)로 **말한다**.
+    cost:
+      max_tokens_per_invocation: 600
+      # 근거: `num_predict: 600`(service:1439). ⚠️ 출력 토큰 상한 ↔ 호출당 총 토큰 — 근사 매핑(L0 과 동일).
+      # 🔴 표현 손실 — **호출 횟수 상한을 적을 자리가 없다**(최대 3회 · N4). `daily_invocation_cap` 은
+      #    루프 전체 일일 상한이라 다른 축이다.
+    # 🔴 표현 손실 — 프롬프트에 원내 약속처방 카탈로그 30건을 통째로 싣는다(service:1412,1422-1423).
+    #    입력 토큰 상한은 실물에도 스키마에도 없다.
+
+  audit:
+    record:
+      - verification_results
+      # 근거: `outcomeMeta`(controller:232-235) → `verifyFailed`(실패 규칙 `|` 연결).
+      # 🔴 U4/R6 **재확인** — 실제로 남기는 `source`·`reason`·`latencyMs` 에 대응하는 enum 값이 없다.
+      #    이 3키가 `skillMetrics`·`judgeSkillQuality`·킬스위치의 유일한 재료다.
+      # 🔴 신규 — 이 루프는 **호출 시점에도 한 행**을 남긴다(`AiRecommendDrugs` + meta `diagnosis`).
+      #    `record[]` 는 "무엇을 기록하는가"의 목록이지 "몇 시점에 기록하는가"가 아니다.
+      #    호출/결과 2행 구조가 사라지면 `skillMetrics` 의 분모(호출 수)가 사라진다.
+    retention:
+      audit_log: P365D
+      # 근거: config 기본 `security.audit.retentionDays = 365`. 🔴 L0 실측 그대로 — **읽는 코드가 없다**
+      #    (선언만 있고 집행 잡 없음). 스키마에 "선언되었으나 집행되지 않음"을 적을 자리가 없다.
+    access_log_identity: clinician_of_record
+    # 근거: `auditAiEgress` 가 `userId`(호출자)로 남긴다(controller:93-110).
+    # 🔴 U2 **재확인** — 두 진입 경로의 감사 방식이 **서로 다르다**:
+    #    · `/ai/recommend-drugs` = 컨트롤러가 직접 2행(`@NoAudit()` + `auditAiEgress` · controller:425,428,430)
+    #    · `/pharmacy/orders/:id/ai-review` = 인터셉터 1행(`@AuditAiRead('AiPharmacyReview')` · pharmacy.controller.ts:350)
+    #    resourceType 도 다르다(`AiRecommendDrugs` vs `AiPharmacyReview`) → **같은 스킬의 호출이 계측 분모에서 갈린다.**
+    #    `audit` 블록은 루프당 하나라 이것을 적을 수 없다.
+
+  # evaluation: 생략 — 골든셋·레드팀·CI 게이트·섀도우 요건이 하나도 없다(L0 과 동일).
+  # 🔴 이 루프에는 `red_team_set.scenarios` 중 `numeric_hallucination` 이 **실제로 관측된 이력**이 있다
+  #    (2026-08-20: 6건 중 4건 미매칭 · `나이아즈올` = 존재하지 않는 약 · ai-verify.ts:107-111).
+  #    그런데 `evaluation` 을 통째로 비우면 스키마도 L14 도 물지 않는다(유인이 뒤집혀 있다 — L0 지적 그대로).
+
+  rollout:
+    kill_switch:
+      granularity: [global, loop]
+      # 근거: global = `ai.server.enabled`(service:172-175) · loop = `ai.skill.quality.action.recommendDrugs`
+      #       (common/ai-skill-quality.ts:51 · 기본 OFF)
+      fallback: emr_native_behavior
+      # 🔴 표현 손실(L0 과 동일) — 두 스위치의 폴백이 다르다. loop=BLOCK 은 탭을 남기고 왜 내렸는지 밝힌다
+      #    (AiAssistantPanel.tsx:962-970 · "막으면 방치된다").
+      auto_trip:
+        - metric: ai_pass_rate
+          operator: <
+          # threshold: 🔴 하드락 ∩ required(U11) + **실물 미설정**(`AI_SKILL_MIN_AI_RATE_DEFAULT = {}` ·
+          #   common/ai-skill-quality.ts:57 "감으로 박은 임계는 거짓 경보가 된다").
+          window: P30D
+          # 근거: `skillQuality(days = 30)`(service:2714)
+          # 🔴 U10 **재확인** — 표본 하한 슬롯이 없다. 실물은 `calls < minCalls(20)` 이면 어떤 조치도 하지 않고
+          #    (`INSUFFICIENT_SAMPLE`/effect NONE · ai-skill-quality.ts:145) `calls === 0` 의 통과율은
+          #    `0` 이 아니라 **`null`**(:137). auto_trip 4필드로는 호출 1건에도 자동 정지가 걸린다.
+          # 🔴 신규 — 실물의 판정은 **5단계 상태 기계**다(UNCONFIGURED/UNMEASURED/INSUFFICIENT_SAMPLE/
+          #    DEGRADED/OK × NONE/WARN/HIDE · ai-skill-quality.ts:137-158). `auto_trip` 은 이분법(정지/유지)이라
+          #    "임계 미설정이라 판정하지 않음"과 "임계 충족"을 같게 만든다.
+    version_pinning: true
+    # ⚠️ sync 경로라 실질 의미가 없다(실행 중 워크플로 없음). `default: true` 는 주입되지 않으므로 명시했다.
+
+  kpis:
+    - id: ai_pass_rate
+      direction: increase
+      # 근거: `aiOk/calls`(service:2698). 🔴 U9 **재확인** — 분자·분모·표본하한·"표본 0의 값(null)" 슬롯 없음.
+    - id: drugs_unresolved_ratio
+      direction: decrease
+      # 근거: `checkDrugsResolvable` 의 `미매칭 n/N`(ai-verify.ts:141) — **이 지표는 분모가 규칙 안에 있다.**
+      #    분모 = "특정을 시도한 추천 수"(`resolution` 이 기록된 것)이지 추천 총수가 아니다(:137-140).
+      #    `Kpi` 에 분모 정의가 없으면 자동 생성 대시보드는 추천 총수로 나눠 **다른 지표**를 그린다.
+    - id: dur_verdict_distribution
+      direction: maintain
+      # 근거: `durVerdict` 5값(PASS/WARNING/BLOCK/UNRESOLVED/null) 분포.
+      # 🔴 `Kpi.direction` 은 increase/decrease/maintain 뿐이라 **분포 지표**를 표현할 수 없다.
+      #    그리고 `null`(재검증 실패)은 분포에서 빼야 하는데 그 규약을 적을 자리가 없다 —
+      #    포함하면 "판정 실패"가 "판정 결과"로 섞인다.

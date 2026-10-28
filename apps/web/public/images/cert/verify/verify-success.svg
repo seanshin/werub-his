@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Outer glow -->
+  <circle cx="60" cy="60" r="56" fill="#ECFDF5"/>
+  <!-- Main circle -->
+  <circle cx="60" cy="60" r="48" fill="#10B981"/>
+  <!-- Inner highlight -->
+  <circle cx="60" cy="60" r="42" fill="#34D399"/>
+  <!-- Checkmark -->
+  <path d="M38 60 L52 74 L82 44" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Small shield -->
+  <g transform="translate(82, 28) scale(0.5)">
+    <path d="M0-18 L14-12 L14 2 Q14 14 0 20 Q-14 14-14 2 L-14-12Z" fill="white" opacity="0.9"/>
+    <path d="M-5 1 L-1 5 L7-3" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

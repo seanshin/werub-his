@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <defs>
+    <path id="textCircle2x" d="M80,24 a56,56 0 1,1 0,112 a56,56 0 1,1 0,-112"/>
+    <path id="textCircleBottom2x" d="M32,80 a48,48 0 1,0 96,0"/>
+  </defs>
+  <!-- Double ring border -->
+  <circle cx="80" cy="80" r="74" fill="none" stroke="#2563EB" stroke-width="3.5"/>
+  <circle cx="80" cy="80" r="66" fill="none" stroke="#2563EB" stroke-width="2"/>
+  <!-- Chain link icon in center -->
+  <g transform="translate(48, 60)" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="0" y="4" width="24" height="24" rx="8" ry="8"/>
+    <rect x="32" y="4" width="24" height="24" rx="8" ry="8"/>
+    <line x1="24" y1="16" x2="32" y2="16" stroke-width="3.5"/>
+  </g>
+  <!-- Circular text - top: BLOCKCHAIN VERIFIED -->
+  <text fill="#2563EB" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" letter-spacing="5">
+    <textPath href="#textCircle2x" startOffset="15%">BLOCKCHAIN VERIFIED</textPath>
+  </text>
+  <!-- Bottom text -->
+  <text x="80" y="116" text-anchor="middle" fill="#2563EB" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="600" letter-spacing="2">Hospital RUN</text>
+</svg>

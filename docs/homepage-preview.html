@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital RUN 종합병원</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['-apple-system','BlinkMacSystemFont','Pretendard','Apple SD Gothic Neo','sans-serif'] },
+      colors: {
+        brand: { 50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e3a5f', 900:'#0f172a' },
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { -webkit-font-smoothing: antialiased; }
+  .dropdown:hover .dropdown-menu { display: block; }
+  .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #1d4ed8 100%); }
+  .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .card-hover { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+  .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -12px rgba(0,0,0,0.1); }
+  .shimmer { background: linear-gradient(110deg, #f5f5f5 8%, #e0e0e0 18%, #f5f5f5 33%); background-size: 200% 100%; animation: shimmer 1.5s linear infinite; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .fade-up { animation: fadeUp 0.6s ease-out both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .img-cover { object-fit: cover; object-position: center; }
+</style>
+</head>
+<body class="bg-white text-gray-900">
+
+<!-- Skip Nav -->
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[60] focus:bg-brand-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold focus:shadow-lg">본문 바로가기</a>
+
+<!-- ========== GNB ========== -->
+<header class="bg-white/90 backdrop-blur-lg border-b border-gray-100/80 sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8">
+    <div class="flex items-center justify-between h-[68px]">
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 bg-gradient-to-br from-brand-600 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-200/50 group-hover:shadow-blue-300/60 transition-shadow">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        </div>
+        <div class="leading-tight">
+          <span class="text-[17px] font-extrabold text-brand-900 tracking-tight">Hospital RUN</span>
+          <span class="text-[10px] text-gray-400 block tracking-widest uppercase">General Hospital</span>
+        </div>
+      </a>
+
+      <nav class="hidden lg:flex items-center gap-1" aria-label="주 메뉴">
+        <div class="relative dropdown"><a href="#" class="px-3.5 py-2 text-[13px] font-semibold text-gray-600 rounded-lg hover:text-brand-700 hover:bg-brand-50/60 transition">병원소개</a>
+          <div class="dropdown-menu hidden absolute top-full left-0 pt-2 min-w-[200px] z-50"><div class="bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100 py-2 px-1"><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">인사말·비전</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">연혁</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">시설 안내</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">오시는 길</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">사회공헌</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">갤러리</a></div></div>
+        </div>
+        <div class="relative dropdown"><a href="#" class="px-3.5 py-2 text-[13px] font-semibold text-brand-700 bg-brand-50 rounded-lg">진료안내</a>
+          <div class="dropdown-menu hidden absolute top-full left-0 pt-2 min-w-[200px] z-50"><div class="bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100 py-2 px-1"><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">진료과 소개</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">전문센터</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">의료진 소개</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">진료시간·예약</a><a href="#" class="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition">비급여 안내</a></div></div>
+        </div>
+        <a href="#" class="px-3.5 py-2 text-[13px] font-semibold text-gray-600 rounded-lg hover:text-brand-700 hover:bg-brand-50/60 transition">건강검진</a>
+        <a href="#" class="px-3.5 py-2 text-[13px] font-semibold text-gray-600 rounded-lg hover:text-brand-700 hover:bg-brand-50/60 transition">이용안내</a>
+        <a href="#" class="px-3.5 py-2 text-[13px] font-semibold text-gray-600 rounded-lg hover:text-brand-700 hover:bg-brand-50/60 transition">건강정보</a>
+        <a href="#" class="px-3.5 py-2 text-[13px] font-semibold text-gray-600 rounded-lg hover:text-brand-700 hover:bg-brand-50/60 transition">병원소식</a>
+        <a href="#" class="px-3.5 py-2 text-[13px] font-semibold text-gray-600 rounded-lg hover:text-brand-700 hover:bg-brand-50/60 transition">고객참여</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <a href="#" class="hidden sm:flex p-2.5 text-gray-400 hover:text-brand-600 rounded-xl hover:bg-gray-50 transition" aria-label="검색">
+          <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </a>
+        <a href="#" class="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand-600 to-blue-500 text-white text-[13px] font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-200/50 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          예약하기
+        </a>
+        <a href="#" class="hidden sm:flex px-3 py-2 text-[13px] text-gray-500 hover:text-brand-600 font-medium transition">환자포털</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ========== 공지 띠배너 ========== -->
+<div class="bg-brand-900 text-white text-center py-2.5 text-[13px] tracking-wide">
+  <span class="inline-flex items-center gap-2">
+    <span class="bg-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">NEW</span>
+    주차 관제 시스템 개선 안내 — 6월 1일부터 차량번호 자동인식(LPR) 도입
+    <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  </span>
+</div>
+
+<!-- ========== 히어로 ========== -->
+<section class="hero-gradient relative overflow-hidden">
+  <div class="absolute inset-0 opacity-20">
+    <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1920&q=80" alt="" class="w-full h-full img-cover" loading="eager">
+  </div>
+  <div class="absolute inset-0 bg-gradient-to-r from-brand-900/95 via-brand-800/80 to-transparent"></div>
+  <div class="relative max-w-7xl mx-auto px-4 lg:px-8 py-20 lg:py-32">
+    <div class="max-w-xl fade-up">
+      <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
+        <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+        <span class="text-[12px] text-blue-200 font-medium tracking-wide">22개 진료과 · 5개 전문센터 · 29명 전문의</span>
+      </div>
+      <h1 class="text-4xl lg:text-[56px] font-extrabold leading-[1.15] text-white tracking-tight">
+        환자 중심의<br>따뜻한 의료
+      </h1>
+      <p class="text-blue-200/80 mt-5 text-base lg:text-lg leading-relaxed max-w-md">
+        Hospital RUN은 최신 의료 기술과 따뜻한 돌봄으로 환자분의 건강한 일상을 응원합니다
+      </p>
+      <div class="flex flex-wrap gap-3 mt-10">
+        <a href="#" class="group px-7 py-3.5 bg-white text-brand-700 font-bold text-[15px] rounded-2xl hover:bg-brand-50 transition-all shadow-xl shadow-black/10 flex items-center gap-2">
+          온라인 예약
+          <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </a>
+        <a href="#" class="px-7 py-3.5 bg-white/10 text-white font-semibold text-[15px] rounded-2xl hover:bg-white/20 transition border border-white/20 backdrop-blur-sm">
+          진료과 안내
+        </a>
+      </div>
+    </div>
+  </div>
+  <!-- 우측 이미지 (데스크톱) -->
+  <div class="hidden xl:block absolute right-0 top-0 w-[480px] h-full">
+    <img src="https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=800&q=80" alt="병원 의료진" class="w-full h-full img-cover rounded-bl-[80px] opacity-60">
+    <div class="absolute inset-0 bg-gradient-to-r from-brand-900 to-transparent"></div>
+  </div>
+</section>
+
+<!-- ========== 빠른 메뉴 ========== -->
+<section class="max-w-7xl mx-auto px-4 lg:px-8 -mt-10 relative z-10">
+  <div class="glass rounded-3xl shadow-xl shadow-gray-200/40 border border-white/60 p-3 lg:p-4">
+    <div class="grid grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
+      <a href="#" class="flex flex-col items-center gap-2.5 p-4 lg:p-5 rounded-2xl hover:bg-blue-50 transition group">
+        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:bg-blue-200 transition"><span class="text-xl">📅</span></div>
+        <span class="text-xs font-semibold text-gray-700">온라인 예약</span>
+      </a>
+      <a href="#" class="flex flex-col items-center gap-2.5 p-4 lg:p-5 rounded-2xl hover:bg-emerald-50 transition group">
+        <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center group-hover:bg-emerald-200 transition"><span class="text-xl">🕐</span></div>
+        <span class="text-xs font-semibold text-gray-700">진료시간</span>
+      </a>
+      <a href="#" class="flex flex-col items-center gap-2.5 p-4 lg:p-5 rounded-2xl hover:bg-amber-50 transition group">
+        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center group-hover:bg-amber-200 transition"><span class="text-xl">📍</span></div>
+        <span class="text-xs font-semibold text-gray-700">오시는 길</span>
+      </a>
+      <a href="#" class="flex flex-col items-center gap-2.5 p-4 lg:p-5 rounded-2xl hover:bg-purple-50 transition group">
+        <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center group-hover:bg-purple-200 transition"><span class="text-xl">🩺</span></div>
+        <span class="text-xs font-semibold text-gray-700">건강검진</span>
+      </a>
+      <a href="#" class="flex flex-col items-center gap-2.5 p-4 lg:p-5 rounded-2xl hover:bg-rose-50 transition group">
+        <div class="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center group-hover:bg-rose-200 transition"><span class="text-xl">💰</span></div>
+        <span class="text-xs font-semibold text-gray-700">비급여 안내</span>
+      </a>
+      <a href="#" class="flex flex-col items-center gap-2.5 p-4 lg:p-5 rounded-2xl hover:bg-cyan-50 transition group">
+        <div class="w-12 h-12 bg-cyan-100 rounded-2xl flex items-center justify-center group-hover:bg-cyan-200 transition"><span class="text-xl">👤</span></div>
+        <span class="text-xs font-semibold text-gray-700">환자 포털</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 진료과 ========== -->
+<section class="max-w-7xl mx-auto px-4 lg:px-8 pt-20 pb-12">
+  <div class="flex items-end justify-between mb-8">
+    <div>
+      <p class="text-brand-600 font-semibold text-sm tracking-wide uppercase mb-1">Departments</p>
+      <h2 class="text-2xl lg:text-3xl font-extrabold text-gray-900">진료과 안내</h2>
+    </div>
+    <a href="#" class="text-sm text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1 transition">전체보기 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></a>
+  </div>
+  <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 lg:gap-3">
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-red-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-red-50 rounded-xl flex items-center justify-center group-hover:bg-red-100 group-hover:scale-110 transition-all"><span class="text-xl">🫀</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">내과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-orange-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-orange-100 group-hover:scale-110 transition-all"><span class="text-xl">🔪</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">외과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-emerald-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-100 group-hover:scale-110 transition-all"><span class="text-xl">🦴</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">정형외과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-purple-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 group-hover:scale-110 transition-all"><span class="text-xl">🧠</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">신경외과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-cyan-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-cyan-50 rounded-xl flex items-center justify-center group-hover:bg-cyan-100 group-hover:scale-110 transition-all"><span class="text-xl">🧒</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">소아청소년과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-pink-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 group-hover:scale-110 transition-all"><span class="text-xl">👶</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">산부인과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-red-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-red-50 rounded-xl flex items-center justify-center group-hover:bg-red-100 group-hover:scale-110 transition-all"><span class="text-xl">🚑</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">응급의학과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-teal-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-teal-50 rounded-xl flex items-center justify-center group-hover:bg-teal-100 group-hover:scale-110 transition-all"><span class="text-xl">👁️</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">안과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-lime-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-lime-50 rounded-xl flex items-center justify-center group-hover:bg-lime-100 group-hover:scale-110 transition-all"><span class="text-xl">👂</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">이비인후과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-rose-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-rose-50 rounded-xl flex items-center justify-center group-hover:bg-rose-100 group-hover:scale-110 transition-all"><span class="text-xl">🧴</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">피부과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-indigo-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-110 transition-all"><span class="text-xl">🧠</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">정신건강의학</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-green-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 group-hover:scale-110 transition-all"><span class="text-xl">💪</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">재활의학과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-blue-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-110 transition-all"><span class="text-xl">🦷</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">치과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-sky-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-sky-50 rounded-xl flex items-center justify-center group-hover:bg-sky-100 group-hover:scale-110 transition-all"><span class="text-xl">📷</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">영상의학과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-amber-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 group-hover:scale-110 transition-all"><span class="text-xl">👨‍👩‍👧</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">가정의학과</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-2 p-3 lg:p-4 rounded-2xl hover:bg-violet-50 hover:shadow-sm transition-all text-center group">
+      <div class="w-11 h-11 bg-violet-50 rounded-xl flex items-center justify-center group-hover:bg-violet-100 group-hover:scale-110 transition-all"><span class="text-xl">🔬</span></div>
+      <span class="text-[11px] lg:text-xs font-semibold text-gray-700 leading-tight">병리과</span>
+    </a>
+  </div>
+</section>
+
+<!-- ========== 전문센터 ========== -->
+<section class="bg-gradient-to-b from-gray-50 to-white py-20">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8">
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <p class="text-brand-600 font-semibold text-sm tracking-wide uppercase mb-1">Specialized Centers</p>
+        <h2 class="text-2xl lg:text-3xl font-extrabold text-gray-900">전문센터</h2>
+      </div>
+      <a href="#" class="text-sm text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">전체보기 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <a href="#" class="card-hover bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+        <div class="h-44 relative"><img src="https://images.unsplash.com/photo-1559757175-5700dde675bc?w=600&q=80" alt="심혈관센터" class="w-full h-full img-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div><div class="absolute bottom-4 left-5"><span class="bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">24시간 응급</span></div></div>
+        <div class="p-5"><h3 class="text-lg font-bold text-gray-900">심혈관센터</h3><p class="text-sm text-gray-500 mt-1.5 line-clamp-2">순환기내과와 흉부외과가 협력하여 심장·혈관 질환의 통합 진료를 제공합니다</p><div class="flex gap-1.5 mt-3"><span class="text-[10px] bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">순환기내과</span><span class="text-[10px] bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">흉부외과</span></div></div>
+      </a>
+      <a href="#" class="card-hover bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+        <div class="h-44 relative"><img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&q=80" alt="암센터" class="w-full h-full img-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div><div class="absolute bottom-4 left-5"><span class="bg-purple-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">다학제 진료</span></div></div>
+        <div class="p-5"><h3 class="text-lg font-bold text-gray-900">암센터</h3><p class="text-sm text-gray-500 mt-1.5 line-clamp-2">암의 진단, 수술, 항암, 방사선치료, 완화의료까지 통합적인 치료를 제공합니다</p><div class="flex gap-1.5 mt-3"><span class="text-[10px] bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">혈액종양내과</span><span class="text-[10px] bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">외과</span><span class="text-[10px] bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">방사선</span></div></div>
+      </a>
+      <a href="#" class="card-hover bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+        <div class="h-44 relative"><img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80" alt="관절·척추센터" class="w-full h-full img-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div><div class="absolute bottom-4 left-5"><span class="bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">원스톱 치료</span></div></div>
+        <div class="p-5"><h3 class="text-lg font-bold text-gray-900">관절·척추센터</h3><p class="text-sm text-gray-500 mt-1.5 line-clamp-2">정형외과와 재활의학과가 협력하여 수술부터 재활까지 원스톱 치료를 제공합니다</p><div class="flex gap-1.5 mt-3"><span class="text-[10px] bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">정형외과</span><span class="text-[10px] bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full font-medium">재활의학과</span></div></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 의료진 ========== -->
+<section class="max-w-7xl mx-auto px-4 lg:px-8 py-20">
+  <div class="flex items-end justify-between mb-8">
+    <div>
+      <p class="text-brand-600 font-semibold text-sm tracking-wide uppercase mb-1">Medical Staff</p>
+      <h2 class="text-2xl lg:text-3xl font-extrabold text-gray-900">의료진 소개</h2>
+    </div>
+    <a href="#" class="text-sm text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">전체보기 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></a>
+  </div>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
+    <a href="#" class="card-hover text-center p-5 rounded-3xl bg-white border border-gray-100 shadow-sm">
+      <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-200/50">김</div>
+      <p class="text-sm font-bold text-gray-900 mt-3">김내과</p><p class="text-[11px] text-gray-400 mt-0.5">순환기내과 과장</p><p class="text-[10px] text-brand-600 font-semibold mt-1">내과</p>
+    </a>
+    <a href="#" class="card-hover text-center p-5 rounded-3xl bg-white border border-gray-100 shadow-sm">
+      <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-emerald-200/50">이</div>
+      <p class="text-sm font-bold text-gray-900 mt-3">이외과</p><p class="text-[11px] text-gray-400 mt-0.5">외과 부장</p><p class="text-[10px] text-brand-600 font-semibold mt-1">외과</p>
+    </a>
+    <a href="#" class="card-hover text-center p-5 rounded-3xl bg-white border border-gray-100 shadow-sm">
+      <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-purple-400 to-violet-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-purple-200/50">박</div>
+      <p class="text-sm font-bold text-gray-900 mt-3">박정형</p><p class="text-[11px] text-gray-400 mt-0.5">정형외과 과장</p><p class="text-[10px] text-brand-600 font-semibold mt-1">정형외과</p>
+    </a>
+    <a href="#" class="card-hover text-center p-5 rounded-3xl bg-white border border-gray-100 shadow-sm">
+      <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-orange-200/50">최</div>
+      <p class="text-sm font-bold text-gray-900 mt-3">최소아</p><p class="text-[11px] text-gray-400 mt-0.5">전문의</p><p class="text-[10px] text-brand-600 font-semibold mt-1">소아청소년과</p>
+    </a>
+    <a href="#" class="card-hover text-center p-5 rounded-3xl bg-white border border-gray-100 shadow-sm">
+      <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-cyan-200/50">정</div>
+      <p class="text-sm font-bold text-gray-900 mt-3">정산부</p><p class="text-[11px] text-gray-400 mt-0.5">전문의</p><p class="text-[10px] text-brand-600 font-semibold mt-1">산부인과</p>
+    </a>
+    <a href="#" class="card-hover text-center p-5 rounded-3xl bg-white border border-gray-100 shadow-sm">
+      <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-pink-400 to-rose-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-pink-200/50">강</div>
+      <p class="text-sm font-bold text-gray-900 mt-3">강응급</p><p class="text-[11px] text-gray-400 mt-0.5">응급의학과 과장</p><p class="text-[10px] text-brand-600 font-semibold mt-1">응급의학과</p>
+    </a>
+  </div>
+</section>
+
+<!-- ========== 건강정보 + 소식 ========== -->
+<section class="bg-gradient-to-b from-gray-50 to-white py-20">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+    <!-- 건강정보 -->
+    <div>
+      <div class="flex items-end justify-between mb-6">
+        <div><p class="text-emerald-600 font-semibold text-sm tracking-wide uppercase mb-1">Health Info</p><h2 class="text-xl font-extrabold text-gray-900">건강정보</h2></div>
+        <a href="#" class="text-sm text-brand-600 font-semibold">더보기 →</a>
+      </div>
+      <div class="space-y-3">
+        <a href="#" class="card-hover block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0"><img src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=200&q=80" alt="" class="w-full h-full img-cover"></div>
+            <div class="flex-1 min-w-0"><h4 class="text-sm font-bold text-gray-900">고혈압 관리 가이드</h4><p class="text-xs text-gray-500 mt-1 line-clamp-2">고혈압은 성인 3명 중 1명이 앓는 흔한 질환입니다. 적절히 관리하면 합병증을 예방할 수 있습니다</p><div class="flex gap-1 mt-2"><span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">혈압</span><span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">심장</span></div></div>
+          </div>
+        </a>
+        <a href="#" class="card-hover block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0"><img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=200&q=80" alt="" class="w-full h-full img-cover"></div>
+            <div class="flex-1 min-w-0"><h4 class="text-sm font-bold text-gray-900">당뇨병 예방과 관리</h4><p class="text-xs text-gray-500 mt-1 line-clamp-2">당뇨병은 혈당이 비정상적으로 높아지는 대사질환입니다</p><div class="flex gap-1 mt-2"><span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">당뇨</span><span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">예방</span></div></div>
+          </div>
+        </a>
+        <a href="#" class="card-hover block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0"><img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=200&q=80" alt="" class="w-full h-full img-cover"></div>
+            <div class="flex-1 min-w-0"><h4 class="text-sm font-bold text-gray-900">뇌졸중 위험 신호와 대처법</h4><p class="text-xs text-gray-500 mt-1 line-clamp-2">FAST 자가 체크법으로 뇌졸중을 조기 발견할 수 있습니다</p><div class="flex gap-1 mt-2"><span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">뇌졸중</span><span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">응급</span></div></div>
+          </div>
+        </a>
+      </div>
+    </div>
+    <!-- 병원소식 -->
+    <div>
+      <div class="flex items-end justify-between mb-6">
+        <div><p class="text-amber-600 font-semibold text-sm tracking-wide uppercase mb-1">Hospital News</p><h2 class="text-xl font-extrabold text-gray-900">병원 소식</h2></div>
+        <a href="#" class="text-sm text-brand-600 font-semibold">더보기 →</a>
+      </div>
+      <div class="space-y-3">
+        <a href="#" class="card-hover block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div class="flex items-center gap-3"><span class="text-[10px] px-2.5 py-1 rounded-full border font-bold whitespace-nowrap bg-blue-50 text-blue-700 border-blue-200">공지</span><div class="flex-1 min-w-0"><h4 class="text-sm font-semibold text-gray-900 truncate">2026년 여름 진료시간 변경 안내</h4></div><span class="text-[11px] text-gray-400 flex-shrink-0">05.22</span></div>
+        </a>
+        <a href="#" class="card-hover block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div class="flex items-center gap-3"><span class="text-[10px] px-2.5 py-1 rounded-full border font-bold whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200">보도</span><div class="flex-1 min-w-0"><h4 class="text-sm font-semibold text-gray-900 truncate">Hospital RUN, AI 트리아지 시스템 도입</h4></div><span class="text-[11px] text-gray-400 flex-shrink-0">05.20</span></div>
+        </a>
+        <a href="#" class="card-hover block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div class="flex items-center gap-3"><span class="text-[10px] px-2.5 py-1 rounded-full border font-bold whitespace-nowrap bg-purple-50 text-purple-700 border-purple-200">행사</span><div class="flex-1 min-w-0"><h4 class="text-sm font-semibold text-gray-900 truncate">2026 건강 페스티벌 개최 안내</h4></div><span class="text-[11px] text-gray-400 flex-shrink-0">05.18</span></div>
+        </a>
+        <a href="#" class="card-hover block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div class="flex items-center gap-3"><span class="text-[10px] px-2.5 py-1 rounded-full border font-bold whitespace-nowrap bg-amber-50 text-amber-700 border-amber-200">수상</span><div class="flex-1 min-w-0"><h4 class="text-sm font-semibold text-gray-900 truncate">환자안전 우수기관 인증 획득</h4></div><span class="text-[11px] text-gray-400 flex-shrink-0">05.15</span></div>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 건강검진 CTA ========== -->
+<section class="max-w-7xl mx-auto px-4 lg:px-8 py-10">
+  <div class="relative rounded-[2rem] overflow-hidden">
+    <img src="https://images.unsplash.com/photo-1551076805-e1869033e561?w=1200&q=80" alt="건강검진" class="absolute inset-0 w-full h-full img-cover">
+    <div class="absolute inset-0 bg-gradient-to-r from-teal-900/90 via-teal-800/80 to-teal-700/60"></div>
+    <div class="relative p-10 lg:p-16 flex flex-col lg:flex-row items-center gap-8">
+      <div class="flex-1">
+        <p class="text-teal-200 text-sm font-semibold uppercase tracking-wide mb-2">Health Checkup</p>
+        <h2 class="text-3xl lg:text-4xl font-extrabold text-white leading-tight">건강검진 프로그램</h2>
+        <p class="text-teal-100/80 mt-3 text-base max-w-md">종합건강검진, 국가검진, 기업단체검진 등 다양한 프로그램을 운영합니다</p>
+      </div>
+      <a href="#" class="group px-8 py-4 bg-white text-teal-800 font-bold text-[15px] rounded-2xl hover:bg-teal-50 transition-all shadow-xl flex items-center gap-2 whitespace-nowrap">
+        검진 프로그램 보기
+        <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ========== FOOTER ========== -->
+<footer class="bg-brand-900 text-gray-400 mt-10">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8 py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div>
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-9 h-9 bg-gradient-to-br from-brand-500 to-blue-400 rounded-xl flex items-center justify-center shadow-md">
+            <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+          </div>
+          <span class="text-white font-extrabold text-[15px]">Hospital RUN</span>
+        </div>
+        <div class="space-y-2.5 text-sm">
+          <p class="text-gray-500">서울시 강남구 강남대로 123</p>
+          <p><span class="text-blue-400 font-semibold">대표전화</span> <a href="tel:02-1234-5678" class="text-white hover:text-blue-300 transition ml-1">02-1234-5678</a></p>
+          <p><span class="text-red-400 font-semibold">응급실</span> <a href="tel:02-1234-5679" class="text-white hover:text-red-300 transition ml-1">02-1234-5679</a> <span class="text-gray-500 text-xs">(24시간)</span></p>
+          <div class="pt-3 text-xs text-gray-600 leading-relaxed">평일 09:00~18:00 | 토 09:00~13:00<br>점심 12:30~14:00 | 일/공휴일 휴진</div>
+        </div>
+      </div>
+      <div>
+        <h4 class="text-white font-bold text-sm mb-4">병원 안내</h4>
+        <ul class="space-y-2.5"><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">병원 소개</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">시설 안내</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">오시는 길</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">채용 안내</a></li></ul>
+      </div>
+      <div>
+        <h4 class="text-white font-bold text-sm mb-4">진료 안내</h4>
+        <ul class="space-y-2.5"><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">진료과 소개</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">의료진 소개</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">진료시간</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">비급여 안내</a></li></ul>
+      </div>
+      <div>
+        <h4 class="text-white font-bold text-sm mb-4">환자 서비스</h4>
+        <ul class="space-y-2.5"><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">온라인 예약</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">환자 포털</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">건강검진</a></li><li><a href="#" class="text-sm text-gray-500 hover:text-white transition">FAQ</a></li></ul>
+      </div>
+    </div>
+    <div class="mt-12 pt-8 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="text-xs text-gray-600">&copy; 2026 Hospital RUN. All rights reserved.</p>
+      <div class="flex gap-5 text-xs text-gray-600">
+        <a href="#" class="hover:text-gray-400 transition font-medium">개인정보처리방침</a>
+        <a href="#" class="hover:text-gray-400 transition">이용약관</a>
+        <a href="#" class="hover:text-gray-400 transition">고객의 소리</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- 모바일 플로팅 -->
+<div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 sm:hidden">
+  <div class="flex items-center gap-2 glass rounded-2xl shadow-2xl border border-white/40 px-2.5 py-2">
+    <a href="tel:02-1234-5678" class="flex items-center gap-1.5 px-5 py-3 bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>전화
+    </a>
+    <a href="#" class="flex items-center gap-1.5 px-5 py-3 bg-brand-600 text-white text-xs font-bold rounded-xl shadow-md">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>예약
+    </a>
+    <button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="flex items-center justify-center w-11 h-11 text-gray-500 rounded-xl hover:bg-gray-100 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "note": "scripts/system-scale.mjs --check 의 동결값. 커지든 작아지든 다르면 실패한다.",
+  "frozenAt": "2026-10-27",
+  "gitHead": "2e9851b73",
+  "dirtyFilesAtFreeze": 34,
+  "dirtyWarning": "🔴 동결 시점에 미커밋 변경이 있었다(병렬 작업 중일 수 있음). 전부 랜딩된 뒤 다시 --freeze 하라.",
+  "values": {
+    "prismaModels": 599,
+    "backendModules": 231,
+    "controllers": 331,
+    "services": 391,
+    "apiEndpoints": 3500,
+    "apiEndpointsSse": 16,
+    "aiEndpoints": 75,
+    "webPagesTotal": 474,
+    "webPagesMain": 372,
+    "webPagesHomepage": 46,
+    "webPagesOther": 56,
+    "homepageAppPages": 50,
+    "adminPages": 130,
+    "workstationPages": 29,
+    "mobileScreens": 32,
+    "backendTestFiles": 1295,
+    "webTestFiles": 429,
+    "sharedTestFiles": 57,
+    "orphanTestFiles": 0,
+    "seedDataLines": 22459,
+    "planDocuments": 278
+  }
+}

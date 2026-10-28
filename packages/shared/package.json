@@ -1,0 +1,19 @@
+{
+  "name": "@hospital-run/shared",
+  "version": "4.130.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist .turbo node_modules"
+  },
+  "devDependencies": {
+    "@lhncbc/ucum-lhc": "^7.1.9",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

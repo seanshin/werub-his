@@ -1,0 +1,44 @@
+groups:
+  - name: medical-twin
+    rules:
+      # 컴플라이언스 — 감사로그 적재 실패(PHI 비저장 보장 위반 신호)
+      - alert: TwinAuditPersistFailures
+        expr: twin_audit_persist_failures_total > 0
+        for: 1m
+        labels: { severity: critical, domain: compliance }
+        annotations:
+          summary: "트윈 감사로그 적재 실패"
+          description: "twin_audit_persist_failures_total={{ $value }} — 컴플라이언스 점검 필요"
+
+      # 가용성 — 서킷 오픈(HIS/AI 연동 장애). ※ twin-api가 twin_circuit_open 노출 시 활성, 미노출이면 무발화
+      - alert: TwinCircuitOpen
+        expr: twin_circuit_open == 1
+        for: 1m
+        labels: { severity: critical, domain: availability }
+        annotations:
+          summary: "트윈 서킷 오픈 (HIS/AI 장애)"
+
+      # 신선도 — 인제스트 지연(데이터 stale)
+      - alert: TwinIngestStale
+        expr: twin_ingest_age_seconds > 300
+        for: 5m
+        labels: { severity: warning, domain: freshness }
+        annotations:
+          summary: "트윈 데이터 신선도 저하"
+          description: "ingest_age={{ $value }}s (>300s)"
+
+      # 임상 — ICU NEWS2 고위험 환자
+      - alert: TwinNews2High
+        expr: twin_icu_news2_high > 0
+        for: 0m
+        labels: { severity: warning, domain: clinical }
+        annotations:
+          summary: "ICU NEWS2 고위험 환자 {{ $value }}명"
+
+      # 임상 — ER 평균 대기 임계
+      - alert: TwinErWaitHigh
+        expr: twin_er_avg_wait_min > 60
+        for: 5m
+        labels: { severity: warning, domain: clinical }
+        annotations:
+          summary: "ER 평균 대기 {{ $value }}분 (>60)"

@@ -1,0 +1,8 @@
+# 필수 마스터 적재 매니페스트 — install.sh 4단계가 읽는다(2026-09-13 상용 릴리즈 T2-4·T2-5).
+# 🔴 출처·기준일을 모르는 마스터는 "미확인" 으로 적는다 — 지어내지 않는다. 미확인 행이 있으면 install.sh 는
+#    `--allow-unverified-masters` 없이는 멈춘다(판매본에 원천 모를 코드표가 들어가는 것을 조용히 넘기지 않는다).
+# 열: key<TAB>이름<TAB>출처<TAB>기준일<TAB>상태(VERIFIED|UNVERIFIED)<TAB>적재 명령(apps/api 기준 · {FILE} = --masters-dir 안 파일)<TAB>파일명
+medication	약가마스터(의약품표준코드)	공공데이터포털 "건강보험심사평가원_약가마스터_의약품표준코드" CSV(UTF-8 변환본)	설치자 기입(파일 배포일)	VERIFIED	npx ts-node --transpile-only prisma/import-drug-master.ts {FILE}	drug-master.utf8.csv
+diagnosis	진단 코드 KCD-8(운영 18,184건)	미확인 — 저장소에 전체 원천·적재 스크립트가 없다(prisma/kcd-expand.ts 는 다빈도 53종 하드코딩뿐)	미확인	UNVERIFIED	(적재 경로 없음 — 🧑 원천·라이선스 확정 후 스크립트 필요)	kcd8.csv
+procedure	수가 기준(procedure_fees 419,024행 · procedure_codes 166,744행)	미확인 — 적재는 API 수입 EP(reference-dataset.service)로만 확인됨 · CLI 경로·원천 파일 기준일 미확정	미확인	UNVERIFIED	(API 기동 후 관리 화면 수입 — 🧑 원천·기준일 확정 필요)	procedure-fees.csv
+lab	검사 코드(lab_test_codes 35행)	미확인 — 시드(seed.ts)에서 온 것으로 추정 · 표준(LOINC 매핑) 원천 미확정	미확인	UNVERIFIED	(분할 전 seed.ts 에 섞여 있음 — T2-3 분할 후 전용 스크립트)	-

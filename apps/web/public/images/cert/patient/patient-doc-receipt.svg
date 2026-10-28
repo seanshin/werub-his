@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" fill="none">
+  <rect width="200" height="150" rx="10" fill="#F8FAFC"/>
+
+  <!-- Envelope body -->
+  <g transform="translate(40, 40)">
+    <rect x="0" y="20" width="120" height="70" rx="6" fill="#E2E8F0"/>
+    <rect x="2" y="22" width="116" height="66" rx="5" fill="#F1F5F9"/>
+
+    <!-- Envelope flap (open) -->
+    <path d="M0 26 L60 0 L120 26" fill="#CBD5E1"/>
+    <path d="M2 26 L60 4 L118 26" fill="#E2E8F0"/>
+
+    <!-- Document coming out -->
+    <rect x="20" y="-15" width="80" height="55" rx="4" fill="white" stroke="#CBD5E1" stroke-width="1.5"/>
+    <!-- Document lines -->
+    <rect x="30" y="-5" width="40" height="3" rx="1.5" fill="#93C5FD"/>
+    <rect x="30" y="4" width="55" height="2" rx="1" fill="#E2E8F0"/>
+    <rect x="30" y="10" width="50" height="2" rx="1" fill="#E2E8F0"/>
+    <rect x="30" y="16" width="45" height="2" rx="1" fill="#E2E8F0"/>
+    <rect x="30" y="24" width="35" height="2" rx="1" fill="#E2E8F0"/>
+
+    <!-- Stamp/seal on document -->
+    <circle cx="82" cy="25" r="10" fill="none" stroke="#3B82F6" stroke-width="2" opacity="0.7"/>
+    <circle cx="82" cy="25" r="6" fill="none" stroke="#3B82F6" stroke-width="1" opacity="0.5"/>
+    <path d="M78 25 L81 28 L86 22" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+  </g>
+
+  <!-- Decorative elements -->
+  <circle cx="30" cy="60" r="3" fill="#DBEAFE"/>
+  <circle cx="175" cy="50" r="3" fill="#DBEAFE"/>
+</svg>

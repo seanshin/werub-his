@@ -1,0 +1,2 @@
+# git archive 가 릴리즈 사본에 커밋을 박는다 — build-info.sh his_resolve_commit 이 읽는다(작업 트리에서는 치환 전 문자열이라 hex 가 아니어서 쓰지 않는다)
+RELEASE_COMMIT export-subst

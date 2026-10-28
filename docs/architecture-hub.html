@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospital RUN — 아키텍처 & 문서 허브</title>
+<style>
+  :root {
+    /* clinical cool neutrals, slight blue bias */
+    --ground: #eef2f5;
+    --surface: #ffffff;
+    --surface-2: #f6f8fa;
+    --border: #d9e0e7;
+    --border-strong: #c2ccd6;
+    --ink: #17222e;
+    --ink-soft: #35485a;
+    --muted: #61717f;
+    --faint: #8a97a3;
+    /* accent — clinical teal */
+    --accent: #0d7d8a;
+    --accent-ink: #0a5d67;
+    --accent-wash: #e2f0f2;
+    /* secondary blue */
+    --blue: #1f5f9e;
+    --blue-wash: #e6eef7;
+    /* semantic (separate from accent) */
+    --good: #2c8a5b;
+    --good-wash: #e2f1e9;
+    --warn: #b5730d;
+    --warn-wash: #f6ecd8;
+    --crit: #c0392b;
+    --crit-wash: #f7e3e0;
+
+    --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+    --font-mono: "SF Mono", "JetBrains Mono", "D2Coding", ui-monospace, Menlo, Consolas, monospace;
+
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 2px rgba(23,34,46,.04), 0 4px 16px rgba(23,34,46,.06);
+    --sidebar-w: 268px;
+    --maxw: 940px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0b1017;
+      --surface: #131c26;
+      --surface-2: #0f1720;
+      --border: #223140;
+      --border-strong: #2f4356;
+      --ink: #e7edf3;
+      --ink-soft: #b9c6d2;
+      --muted: #8b9aa8;
+      --faint: #6a7a88;
+      --accent: #38b6c3;
+      --accent-ink: #6fd2dc;
+      --accent-wash: #123037;
+      --blue: #5b9bd8;
+      --blue-wash: #14263a;
+      --good: #4bb37e;
+      --good-wash: #12291f;
+      --warn: #d69a3c;
+      --warn-wash: #2e2413;
+      --crit: #e0685a;
+      --crit-wash: #2e1815;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 18px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #eef2f5; --surface: #ffffff; --surface-2: #f6f8fa;
+    --border: #d9e0e7; --border-strong: #c2ccd6;
+    --ink: #17222e; --ink-soft: #35485a; --muted: #61717f; --faint: #8a97a3;
+    --accent: #0d7d8a; --accent-ink: #0a5d67; --accent-wash: #e2f0f2;
+    --blue: #1f5f9e; --blue-wash: #e6eef7;
+    --good: #2c8a5b; --good-wash: #e2f1e9; --warn: #b5730d; --warn-wash: #f6ecd8; --crit: #c0392b; --crit-wash: #f7e3e0;
+    --shadow: 0 1px 2px rgba(23,34,46,.04), 0 4px 16px rgba(23,34,46,.06);
+  }
+  :root[data-theme="dark"] {
+    --ground: #0b1017; --surface: #131c26; --surface-2: #0f1720;
+    --border: #223140; --border-strong: #2f4356;
+    --ink: #e7edf3; --ink-soft: #b9c6d2; --muted: #8b9aa8; --faint: #6a7a88;
+    --accent: #38b6c3; --accent-ink: #6fd2dc; --accent-wash: #123037;
+    --blue: #5b9bd8; --blue-wash: #14263a;
+    --good: #4bb37e; --good-wash: #12291f; --warn: #d69a3c; --warn-wash: #2e2413; --crit: #e0685a; --crit-wash: #2e1815;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 18px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--font-sans); line-height: 1.6;
+    font-size: 15.5px; -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-ink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+  /* ---- Layout ---- */
+  .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+  .sidebar {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    background: var(--surface-2); border-right: 1px solid var(--border);
+    padding: 22px 16px 40px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 16px; }
+  .brand .mark {
+    width: 34px; height: 34px; border-radius: 9px; flex: none;
+    background: linear-gradient(150deg, var(--accent), var(--blue));
+    display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 15px;
+    box-shadow: 0 2px 8px rgba(13,125,138,.35);
+  }
+  .brand .bt { font-weight: 750; font-size: 15px; letter-spacing: -.01em; line-height: 1.15; }
+  .brand .bs { font-size: 11.5px; color: var(--muted); }
+  .nav { display: flex; flex-direction: column; gap: 1px; }
+  .nav .grp { font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--faint); font-weight: 700; padding: 16px 10px 6px; }
+  .nav a {
+    display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: var(--radius-sm);
+    color: var(--ink-soft); font-size: 13.5px; font-weight: 500; border-left: 2px solid transparent;
+  }
+  .nav a:hover { background: var(--surface); text-decoration: none; color: var(--ink); }
+  .nav a.active { background: var(--accent-wash); color: var(--accent-ink); font-weight: 650; border-left-color: var(--accent); }
+  .nav a .n { font-family: var(--font-mono); font-size: 11px; color: var(--faint); width: 16px; }
+  .nav a.active .n { color: var(--accent-ink); }
+
+  .main { min-width: 0; }
+  .topbar {
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px;
+    padding: 11px 24px; background: color-mix(in srgb, var(--surface) 86%, transparent);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar .menu-btn { display: none; }
+  .topbar .tt { font-weight: 650; font-size: 14px; letter-spacing: -.01em; }
+  .topbar .spacer { flex: 1; }
+  .badge {
+    font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
+    background: var(--accent-wash); color: var(--accent-ink); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .theme-btn {
+    font: inherit; font-size: 12.5px; cursor: pointer; padding: 5px 11px; border-radius: 20px;
+    background: var(--surface-2); color: var(--ink-soft); border: 1px solid var(--border); display: inline-flex; gap: 6px; align-items: center;
+  }
+  .theme-btn:hover { border-color: var(--border-strong); }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 8px 32px 96px; }
+  section { padding-top: 30px; margin-top: 22px; scroll-margin-top: 64px; }
+  section > .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: var(--accent); }
+  h1.page { font-size: 30px; line-height: 1.15; letter-spacing: -.02em; margin: 6px 0 8px; font-weight: 780; text-wrap: balance; }
+  h2 { font-size: 22px; line-height: 1.2; letter-spacing: -.02em; margin: 8px 0 4px; font-weight: 720; text-wrap: balance;
+       padding-bottom: 9px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 16px; margin: 26px 0 8px; font-weight: 680; letter-spacing: -.01em; }
+  h4 { font-size: 13.5px; margin: 18px 0 6px; font-weight: 680; color: var(--ink-soft); }
+  p { margin: 10px 0; color: var(--ink-soft); }
+  .lead { font-size: 16.5px; color: var(--muted); margin: 4px 0 18px; max-width: 66ch; }
+  strong { color: var(--ink); font-weight: 650; }
+  code {
+    font-family: var(--font-mono); font-size: .86em; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 5px; padding: .08em .38em; color: var(--ink-soft);
+  }
+  ul, ol { color: var(--ink-soft); padding-left: 20px; }
+  li { margin: 5px 0; }
+  hr.soft { border: none; border-top: 1px solid var(--border); margin: 26px 0; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: repeat(2,1fr); }
+  .g3 { grid-template-columns: repeat(3,1fr); }
+  .g4 { grid-template-columns: repeat(4,1fr); }
+
+  /* metric tiles */
+  .metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 18px 0; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 15px; box-shadow: var(--shadow); }
+  .metric .v { font-size: 25px; font-weight: 760; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.05; }
+  .metric .v small { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .metric .l { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* tables */
+  .tw { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 460px; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 650; color: var(--ink-soft); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--accent-wash) 40%, transparent); }
+  td code { white-space: nowrap; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+  /* pills */
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 20px; border: 1px solid transparent; white-space: nowrap; }
+  .pill.good { background: var(--good-wash); color: var(--good); border-color: color-mix(in srgb, var(--good) 28%, transparent); }
+  .pill.warn { background: var(--warn-wash); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 28%, transparent); }
+  .pill.crit { background: var(--crit-wash); color: var(--crit); border-color: color-mix(in srgb, var(--crit) 28%, transparent); }
+  .pill.blue { background: var(--blue-wash); color: var(--blue); border-color: color-mix(in srgb, var(--blue) 28%, transparent); }
+  .pill.tel { background: var(--accent-wash); color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 28%, transparent); }
+  .pill.off { background: var(--surface-2); color: var(--muted); border-color: var(--border); }
+
+  /* callouts */
+  .note { border-left: 3px solid var(--accent); background: var(--accent-wash); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 12px 16px; margin: 14px 0; font-size: 13.5px; color: var(--ink-soft); }
+  .note.warn { border-left-color: var(--warn); background: var(--warn-wash); }
+  .note.crit { border-left-color: var(--crit); background: var(--crit-wash); }
+  .note .h { font-weight: 700; color: var(--ink); font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 3px; }
+  .note.warn .h { color: var(--warn); } .note.crit .h { color: var(--crit); } .note .h { color: var(--accent-ink); }
+
+  /* architecture layer stack */
+  .layers { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+  .layer { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+  .layer .lb { font-weight: 700; font-size: 14px; min-width: 128px; letter-spacing: -.01em; }
+  .layer .ld { font-size: 12.5px; color: var(--muted); }
+  .layer.l1 { border-left: 4px solid var(--blue); } .layer.l1 .lb { color: var(--blue); }
+  .layer.l2 { border-left: 4px solid var(--accent); } .layer.l2 .lb { color: var(--accent-ink); }
+  .layer.l3 { border-left: 4px solid var(--good); } .layer.l3 .lb { color: var(--good); }
+  .layer.l4 { border-left: 4px solid var(--warn); } .layer.l4 .lb { color: var(--warn); }
+  .flowdir { text-align: center; font-size: 12px; color: var(--faint); font-family: var(--font-mono); }
+
+  /* module domain map */
+  .domains { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 16px 0; }
+  .dom { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px; box-shadow: var(--shadow); }
+  .dom .dh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .dom .dt { font-weight: 680; font-size: 13.5px; letter-spacing: -.01em; }
+  .dom .dc { font-family: var(--font-mono); font-size: 11px; color: var(--faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { font-family: var(--font-mono); font-size: 10.5px; padding: 2px 6px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+
+  /* topology diagram */
+  .topo { margin: 16px 0; }
+  .topo svg { width: 100%; height: auto; display: block; }
+  .topo .edge { stroke: var(--border-strong); stroke-width: 1.6; fill: none; }
+  .topo .node-box { fill: var(--surface); stroke: var(--border); }
+  .topo .hub-box { fill: var(--accent-wash); stroke: var(--accent); stroke-width: 1.5; }
+  .topo .nt { fill: var(--ink); font-weight: 650; font-family: var(--font-sans); }
+  .topo .ns { fill: var(--muted); font-family: var(--font-mono); }
+  .topo .ht { fill: var(--accent-ink); font-weight: 750; font-family: var(--font-sans); }
+
+  .kbd { font-family: var(--font-mono); font-size: 11.5px; background: var(--surface-2); border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; color: var(--ink-soft); }
+  .foot { color: var(--faint); font-size: 12px; margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); }
+  pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); }
+
+  @media (max-width: 940px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: fixed; z-index: 40; left: 0; top: 0; width: 280px; transform: translateX(-100%); transition: transform .22s ease; box-shadow: var(--shadow); }
+    .sidebar.open { transform: translateX(0); }
+    .topbar .menu-btn { display: inline-flex; }
+    .scrim { display: none; position: fixed; inset: 0; z-index: 35; background: rgba(0,0,0,.4); }
+    .scrim.show { display: block; }
+  }
+  @media (max-width: 720px) {
+    .metrics, .domains, .g2, .g3, .g4 { grid-template-columns: 1fr 1fr; }
+    .wrap { padding: 8px 18px 80px; }
+  }
+  @media (max-width: 460px) { .metrics, .domains, .g2, .g3, .g4 { grid-template-columns: 1fr; } }
+  .menu-btn { font: inherit; cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: 5px 9px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="mark">HR</div>
+      <div>
+        <div class="bt">Hospital RUN</div>
+        <div class="bs">아키텍처 &amp; 문서 허브</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="grp">개요</div>
+      <a href="#overview"><span class="n">01</span> 시스템 개요</a>
+      <a href="#scale"><span class="n">02</span> 실측 규모</a>
+      <div class="grp">아키텍처</div>
+      <a href="#architecture"><span class="n">03</span> 계층 아키텍처</a>
+      <a href="#monorepo"><span class="n">04</span> 모노레포 구조</a>
+      <a href="#domains"><span class="n">05</span> 도메인 모듈맵</a>
+      <a href="#frontend"><span class="n">06</span> 프론트엔드 셸</a>
+      <div class="grp">연동 · 인프라</div>
+      <a href="#topology"><span class="n">07</span> 외부 연동 토폴로지</a>
+      <a href="#infra"><span class="n">08</span> 기술 스택 · 인프라</a>
+      <a href="#deploy"><span class="n">09</span> 배포 파이프라인</a>
+      <a href="#security"><span class="n">10</span> 보안 · 인증 · 감사</a>
+      <div class="grp">매뉴얼</div>
+      <a href="#roles"><span class="n">11</span> 역할별 사용 매뉴얼</a>
+      <a href="#ops"><span class="n">12</span> 운영 런북</a>
+      <div class="grp">개발자 참고</div>
+      <a href="#onboarding"><span class="n">13</span> 온보딩 · 컨벤션</a>
+      <a href="#gotchas"><span class="n">14</span> 함정 모음</a>
+      <a href="#appendix"><span class="n">15</span> 부록 · 문서맵</a>
+    </nav>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기">☰</button>
+      <span class="tt">Hospital RUN 문서 허브</span>
+      <span class="spacer"></span>
+      <span class="badge">v3.97.0</span>
+      <button class="theme-btn" id="themeBtn" aria-label="테마 전환"><span id="themeIco">◐</span> 테마</button>
+    </header>
+
+    <div class="wrap">
+
+      <!-- 01 OVERVIEW -->
+      <section id="overview" style="padding-top:14px;">
+        <div class="eyebrow">Overview · 경영진 · 전 독자</div>
+        <h1 class="page">한국형 대학병원급 통합 병원정보시스템 (HIS)</h1>
+        <p class="lead">Hospital RUN은 접수·진료·처방·검사·수납·입원·간호·약국·건강검진·환자포털을 하나의 플랫폼으로 잇는 엔터프라이즈 HIS입니다. HospitalRun·EtherCIS·Medplum의 설계를 참고하되, 한국 의료 표준(KCD-8·EDI·DUR·HIRA·KTAS·EMR 인증)과 FHIR R4에 정합하도록 자체 구축했습니다.</p>
+        <div class="grid g3">
+          <div class="card">
+            <h4 style="margin-top:0;color:var(--accent-ink)">무엇인가</h4>
+            <p style="margin:0;font-size:13.5px">단일 모노레포(Turborepo) 위에 Next.js 15 웹, NestJS API, Expo 모바일이 올라간 <strong>웹·모바일 통합 HIS</strong>. 204 백엔드 도메인, 3,094 API, 433 화면.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;color:var(--accent-ink)">특징</h4>
+            <p style="margin:0;font-size:13.5px"><strong>Enterprise Clean Architecture</strong> · RBAC 기반 접근제어 · <strong>WeRU.B 의료 AI</strong> 연동 · FHIR R4/openEHR · 원격진료 · 블록체인 증명서 · 메타버스 여정.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;color:var(--accent-ink)">운영 현황</h4>
+            <p style="margin:0;font-size:13.5px"><code>his.example.org</code> 라이브 운영. 기획서 <strong>221건 100% 구현</strong>. PACS는 OpenPACS로 분리 운영. pm2 + nginx + PostgreSQL 16.</p>
+          </div>
+        </div>
+        <div class="note"><span class="h">이 문서의 정본성</span>모든 수치는 <strong>2026-08-10 코드베이스 실측</strong> 기준입니다. 저장소 canonical(<code>README.md</code>·<code>docs/INDEX.md</code>·<code>API-REFERENCE.md</code>)도 동일 기준으로 동기화돼 있습니다.</p></div>
+      </section>
+
+      <!-- 02 SCALE -->
+      <section id="scale">
+        <div class="eyebrow">Scale</div>
+        <h2>실측 규모 — 2026-08-10 · v3.97.0 운영</h2>
+        <div class="metrics">
+          <div class="metric"><div class="v">204</div><div class="l">도메인 모듈 (api/src/modules)</div></div>
+          <div class="metric"><div class="v">283</div><div class="l">컨트롤러</div></div>
+          <div class="metric"><div class="v">298</div><div class="l">서비스</div></div>
+          <div class="metric"><div class="v">526</div><div class="l">Prisma 모델</div></div>
+          <div class="metric"><div class="v">3,094</div><div class="l">API 엔드포인트</div></div>
+          <div class="metric"><div class="v">92</div><div class="l">AI 엔드포인트 (WeRU.B)</div></div>
+          <div class="metric"><div class="v">433</div><div class="l">웹 페이지 (page.tsx)</div></div>
+          <div class="metric"><div class="v">31</div><div class="l">모바일 화면</div></div>
+          <div class="metric"><div class="v">24,022</div><div class="l">의약품 코드 (약가 21,981)</div></div>
+          <div class="metric"><div class="v">18,184</div><div class="l">KCD-8 상병 코드</div></div>
+          <div class="metric"><div class="v">449</div><div class="l">백엔드 테스트 파일</div></div>
+          <div class="metric"><div class="v">221</div><div class="l">기획서 (*.plan.md)</div></div>
+        </div>
+        <p style="font-size:12.5px;color:var(--faint)">※ 모듈/컨트롤러/서비스/모델/페이지 수치는 파일시스템 직접 카운트로 <code>CLAUDE.md</code> System Scale과 동기화됨(도메인 모듈 204·모델 526). 도메인 모듈은 <code>api/src/modules</code> 최상위 디렉터리 기준이며, <code>*.module.ts</code> 파일(중첩 서브모듈 포함) 카운트는 216으로 더 큽니다.</p>
+      </section>
+
+      <!-- 03 ARCHITECTURE -->
+      <section id="architecture">
+        <div class="eyebrow">Architecture · 개발자 · 연동팀</div>
+        <h2>계층 아키텍처 — Enterprise Clean Architecture</h2>
+        <p>의존성은 항상 안쪽(Domain)을 향합니다. Presentation·Application은 Domain에 의존하고, Infrastructure는 Domain이 정의한 인터페이스를 구현합니다(의존성 역전). 도메인 규칙은 프레임워크·DB·외부 시스템으로부터 격리됩니다.</p>
+        <div class="layers">
+          <div class="layer l1"><span class="lb">Presentation</span><span class="ld">Next.js 15 App Router · NestJS Controller · DTO(class-validator) · 응답 <code>{ data, meta }</code></span></div>
+          <div class="flowdir">↓ 의존</div>
+          <div class="layer l2"><span class="lb">Application</span><span class="ld">Service · UseCase · 트랜잭션 경계 · 오케스트레이션 · 권한 정책(RBAC Guard)</span></div>
+          <div class="flowdir">↓ 의존</div>
+          <div class="layer l3"><span class="lb">Domain</span><span class="ld">엔티티 · 도메인 규칙 · openEHR 패턴 임상 모델 · <code>DomainException</code></span></div>
+          <div class="flowdir">↑ 인터페이스 구현 (의존성 역전)</div>
+          <div class="layer l4"><span class="lb">Infrastructure</span><span class="ld">Prisma ORM · PostgreSQL · Redis · 외부 연동 어댑터(ERP·AI·PACS·sign) · outbox</span></div>
+        </div>
+        <div class="grid g2" style="margin-top:16px">
+          <div class="card">
+            <h4 style="margin-top:0">핵심 규약</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li>API 프리픽스 <code>/api/v1/</code>(내부) · <code>/fhir/R4/</code>(FHIR)</li>
+              <li>응답 <code>{ data, meta }</code> / 오류 <code>{ error: { code, message, details }, meta }</code></li>
+              <li>인증 Custom JWT + RBAC Guard (ADR-001)</li>
+              <li>환자명 <code>familyName</code>/<code>givenName</code> (ADR-002, FHIR 호환)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0">의료 표준</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li>외부 상호운용 <strong>FHIR R4</strong> (fhir · fhir-full · SMART on FHIR)</li>
+              <li>내부 임상 모델 <strong>openEHR 패턴</strong> (ClinicalChartResult · 아키타입 4종)</li>
+              <li>표준 코드 <strong>KCD-8 · EDI · DUR · HIRA</strong> · KTAS · OMOP-CDM · CDA · HIE</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 MONOREPO -->
+      <section id="monorepo">
+        <div class="eyebrow">Architecture</div>
+        <h2>모노레포 구조 — Turborepo + npm workspaces</h2>
+        <pre>hospital-run/
+├── apps/web/          Next.js 15 (App Router) — 프론트엔드 (433 page.tsx)
+│   └── src/app/       (main)·(homepage)·(auth)·portal·staff·tablet·station·print …
+├── apps/api/          NestJS — 백엔드 API (204 도메인 모듈 · 3,094 EP)
+│   ├── src/modules/   도메인별 모듈 (patient·encounter·order·billing …)
+│   └── prisma/        schema.prisma (526 모델) · migrations · seed
+├── apps/mobile/       Expo SDK 56 (React Native) — 모바일 (31 화면 · FCM)
+├── packages/shared/   공유 타입 · 상수
+├── infra/
+│   ├── docker/        docker-compose (postgres·redis) · nginx
+│   ├── scripts/       deploy.sh (자동 백업)
+│   ├── pdf/           헤드리스 PDF 렌더
+│   └── observability/ 관측
+└── docs/              PDCA 문서 (01-plan·02-design·03-analysis·04-report·05-reference)</pre>
+        <div class="note warn"><span class="h">PACS 분리</span>PACS는 별도 저장소(<a href="https://github.com/seanshin/openpacs">OpenPACS</a>)로 분리 운영됩니다. <code>docker-compose.yml</code>의 orthanc/ohif/backend, nginx의 <code>/pacs-api/·/dicom-web/·/wado·/viewer/</code>, <code>openpacs</code> DB는 <strong>수정 금지</strong>. HIS는 <code>/pacs/</code> URL 링크만 제공합니다.</div>
+      </section>
+
+      <!-- 05 DOMAINS -->
+      <section id="domains">
+        <div class="eyebrow">Architecture</div>
+        <h2>도메인 모듈맵 — 204개 모듈의 기능 클러스터</h2>
+        <p>NestJS 모듈은 진료 워크플로우 단위로 묶입니다. 아래는 주요 클러스터별 대표 모듈입니다(전체 아님).</p>
+        <div class="domains">
+          <div class="dom"><div class="dh"><span class="dt">환자 · 등록</span><span class="dc">10+</span></div><div class="chips"><span class="chip">patient</span><span class="chip">patient-auth</span><span class="chip">registration-consent</span><span class="chip">foreign-patient</span><span class="chip">kiosk</span><span class="chip">waiting-queue</span><span class="chip">eligibility</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">진료 · EMR</span><span class="dc">13+</span></div><div class="chips"><span class="chip">encounter</span><span class="chip">chart-template</span><span class="chip">clinical-chart-result</span><span class="chip">problem-list</span><span class="chip">allergy</span><span class="chip">chronic</span><span class="chip">questionnaire</span><span class="chip">form-engine</span><span class="chip">triage</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">처방 · CPOE</span><span class="dc">9+</span></div><div class="chips"><span class="chip">order</span><span class="chip">order-set</span><span class="chip">pre-order</span><span class="chip">prescription</span><span class="chip">cdss</span><span class="chip">formulary</span><span class="chip">therapy-order</span><span class="chip">doctor-code</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">전문 진료과</span><span class="dc">16과</span></div><div class="chips"><span class="chip">internal-medicine</span><span class="chip">orthopedics</span><span class="chip">obgyn</span><span class="chip">pediatrics</span><span class="chip">psychiatry</span><span class="chip">ophthalmology</span><span class="chip">ent</span><span class="chip">urology</span><span class="chip">neurosurgery</span><span class="chip">dental</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">입원 · 간호</span><span class="dc">11+</span></div><div class="chips"><span class="chip">admission</span><span class="chip">inpatient</span><span class="chip">bed</span><span class="chip">transfer</span><span class="chip">discharge-summary</span><span class="chip">nurse-station</span><span class="chip">nursing-note</span><span class="chip">care-team</span><span class="chip">duty-schedule</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">검사 · 진단</span><span class="dc">8+</span></div><div class="chips"><span class="chip">lab</span><span class="chip">imaging</span><span class="chip">pathology</span><span class="chip">blood-bank</span><span class="chip">diagnostic-test</span><span class="chip">icu</span><span class="chip">pacu</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">수술 · 특수치료</span><span class="dc">9+</span></div><div class="chips"><span class="chip">surgery</span><span class="chip">surgery-opnote</span><span class="chip">dialysis</span><span class="chip">radiation</span><span class="chip">transplant</span><span class="chip">burn-assessment</span><span class="chip">cancer-registry</span><span class="chip">cssd</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">약국</span><span class="dc">4+</span></div><div class="chips"><span class="chip">pharmacy</span><span class="chip">pharmacist-activity</span><span class="chip">controlled-substance</span><span class="chip">non-covered</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">수납 · 청구 · 재무</span><span class="dc">10+</span></div><div class="chips"><span class="chip">billing</span><span class="chip">billing-advanced</span><span class="chip">claim</span><span class="chip">installment</span><span class="chip">deposit</span><span class="chip">fee-integration</span><span class="chip">hira-edi</span><span class="chip">cost-analysis</span><span class="chip">voucher</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">건강검진</span><span class="dc">2</span></div><div class="chips"><span class="chip">checkup</span><span class="chip">checkup-explainer</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">AI · CDSS</span><span class="dc">8+</span></div><div class="chips"><span class="chip">medical-ai</span><span class="chip">cdss</span><span class="chip">orchestrator</span><span class="chip">concierge</span><span class="chip">agent-session</span><span class="chip">scribe</span><span class="chip">bots</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">포털 · 원격 · 앱</span><span class="dc">6+</span></div><div class="chips"><span class="chip">portal</span><span class="chip">telehealth</span><span class="chip">remote-consultation</span><span class="chip">education</span><span class="chip">satisfaction</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">표준 · 상호운용</span><span class="dc">9+</span></div><div class="chips"><span class="chip">fhir</span><span class="chip">fhir-full</span><span class="chip">cda-converter</span><span class="chip">hie</span><span class="chip">omop-cdm</span><span class="chip">medical-terminology</span><span class="chip">code-master</span><span class="chip">smart-auth</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">외부 연동</span><span class="dc">8+</span></div><div class="chips"><span class="chip">integration</span><span class="chip">clinic-integration</span><span class="chip">fee-integration</span><span class="chip">sign-integration</span><span class="chip">document-sign</span><span class="chip">pacs-proxy</span><span class="chip">twin</span><span class="chip">partner-request</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">보안 · 인증 · 감사</span><span class="dc">13+</span></div><div class="chips"><span class="chip">auth</span><span class="chip">access-control</span><span class="chip">audit</span><span class="chip">audit-enhanced</span><span class="chip">credential-admin</span><span class="chip">emr-cert</span><span class="chip">retention</span><span class="chip">consent</span><span class="chip">terminal</span><span class="chip">blockchain-cert</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">의무기록 · 문서</span><span class="dc">6+</span></div><div class="chips"><span class="chip">medical-record-copy</span><span class="chip">medical-record-issuance</span><span class="chip">medical-record-search</span><span class="chip">document</span><span class="chip">referral-letter</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">행정 · 인사 · 자원</span><span class="dc">10+</span></div><div class="chips"><span class="chip">hr</span><span class="chip">ess</span><span class="chip">onboarding</span><span class="chip">staff-qualification</span><span class="chip">workgroup</span><span class="chip">organization</span><span class="chip">equipment</span><span class="chip">inventory</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">여정 · 프로토콜</span><span class="dc">6+</span></div><div class="chips"><span class="chip">journey</span><span class="chip">journey-console</span><span class="chip">patient-flow</span><span class="chip">protocol</span><span class="chip">clinical-pathway</span><span class="chip">emergency-pathway</span></div></div>
+          <div class="dom"><div class="dh"><span class="dt">대시보드 · 경영</span><span class="dc">8+</span></div><div class="chips"><span class="chip">dashboard</span><span class="chip">executive</span><span class="chip">operational-stats</span><span class="chip">quality</span><span class="chip">qi</span><span class="chip">research</span><span class="chip">mdt</span></div></div>
+        </div>
+        <div class="note"><span class="h">Journey 이벤트 필수</span>신규 기능 구현 시 <strong>환자 여정 이벤트 발행</strong>이 규약입니다(journey-integration-guide). 워크플로우 상태 변화는 journey에 반영되어 여정 콘솔·메타버스 동선에 집계됩니다.</div>
+      </section>
+
+      <!-- 06 FRONTEND -->
+      <section id="frontend">
+        <div class="eyebrow">Architecture · 개발자</div>
+        <h2>프론트엔드 셸 — App Router 라우트 그룹</h2>
+        <p>Next.js App Router는 목적별 셸(route group)로 분리됩니다. 셸마다 인증·레이아웃·API 접근 방식이 다릅니다.</p>
+        <div class="tw"><table>
+          <thead><tr><th>라우트 그룹</th><th>용도</th><th>인증</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td><code>(main)</code></td><td>HIS 본체 — 진료·처방·수납·간호·관리 (334p)</td><td>직원 JWT</td><td><code>apiClient</code> 사용</td></tr>
+            <tr><td><code>(homepage)</code></td><td>공개 홈페이지 · CMS (46p)</td><td>공개</td><td><span class="pill crit">apiClient 금지 → fetch() 직접</span></td></tr>
+            <tr><td><code>(auth)</code></td><td>로그인 · SSO</td><td>—</td><td>직원 패스워드리스 SSO</td></tr>
+            <tr><td><code>portal</code></td><td>환자 포털 — 예약·검사결과·의무기록</td><td>환자/포털 토큰</td><td><code>PortalOrPatientGuard</code> 필수</td></tr>
+            <tr><td><code>staff</code></td><td>직원 승인·step-up 콘솔</td><td>직원 JWT + 생체</td><td>차트 서명·처방 승인</td></tr>
+            <tr><td><code>tablet</code></td><td>간호 태블릿 모드 (라운드보드·MAR)</td><td>직원 JWT</td><td>독립 셸</td></tr>
+            <tr><td><code>station</code> · <code>display</code></td><td>워크스테이션 · 대기 안내 디스플레이</td><td>단말/공개</td><td>zero-trust 단말</td></tr>
+            <tr><td><code>consent-device</code> · <code>consent-sign</code></td><td>서명 기기 · 대면 서명패드</td><td>QR 자가등록</td><td>블록체인 앵커링</td></tr>
+            <tr><td><code>en</code> · <code>ja</code> · <code>zh</code></td><td>다국어 홈/포털</td><td>공개</td><td>공유 번역 엔진</td></tr>
+          </tbody>
+        </table></div>
+        <p style="font-size:12.5px;color:var(--faint)">상태관리 Zustand · 서버상태 TanStack Query · 폼 React Hook Form + Zod · UI Tailwind + shadcn/ui · 위젯 시스템 @dnd-kit(react-grid-layout은 React 19 비호환).</p>
+      </section>
+
+      <!-- 07 TOPOLOGY -->
+      <section id="topology">
+        <div class="eyebrow">Integration · 연동팀</div>
+        <h2>외부 연동 토폴로지</h2>
+        <p>HIS Core를 중심으로 6개 외부 시스템이 연동됩니다. 대부분 config 플래그로 게이트되며 기본 비활성 상태에서 점진 활성화합니다.</p>
+        <div class="topo card" style="padding:8px">
+          <svg viewBox="0 0 760 400" role="img" aria-label="HIS 외부 연동 허브-스포크 다이어그램">
+            <!-- edges -->
+            <line class="edge" x1="380" y1="200" x2="150" y2="70"/>
+            <line class="edge" x1="380" y1="200" x2="610" y2="70"/>
+            <line class="edge" x1="380" y1="200" x2="90" y2="200"/>
+            <line class="edge" x1="380" y1="200" x2="670" y2="200"/>
+            <line class="edge" x1="380" y1="200" x2="150" y2="330"/>
+            <line class="edge" x1="380" y1="200" x2="610" y2="330"/>
+            <!-- hub -->
+            <rect class="hub-box" x="298" y="164" width="164" height="72" rx="12"/>
+            <text class="ht" x="380" y="194" text-anchor="middle" font-size="16">HIS Core</text>
+            <text class="ns" x="380" y="214" text-anchor="middle" font-size="10.5">Next.js · NestJS · PG16</text>
+            <!-- nodes -->
+            <g>
+              <rect class="node-box" x="52" y="34" width="196" height="66" rx="10"/>
+              <text class="nt" x="150" y="60" text-anchor="middle" font-size="13">ERP (재무 SoT)</text>
+              <text class="ns" x="150" y="80" text-anchor="middle" font-size="10">SSO · outbox · HMAC · D-6</text>
+            </g>
+            <g>
+              <rect class="node-box" x="512" y="34" width="196" height="66" rx="10"/>
+              <text class="nt" x="610" y="60" text-anchor="middle" font-size="13">WeRU.B 의료 AI</text>
+              <text class="ns" x="610" y="80" text-anchor="middle" font-size="10">STT·SOAP·DUR · Bearer</text>
+            </g>
+            <g>
+              <rect class="node-box" x="8" y="167" width="168" height="66" rx="10"/>
+              <text class="nt" x="92" y="193" text-anchor="middle" font-size="13">OpenPACS</text>
+              <text class="ns" x="92" y="213" text-anchor="middle" font-size="10">Orthanc·OHIF · /pacs/</text>
+            </g>
+            <g>
+              <rect class="node-box" x="584" y="167" width="168" height="66" rx="10"/>
+              <text class="nt" x="668" y="193" text-anchor="middle" font-size="13">sign (전자서명)</text>
+              <text class="ns" x="668" y="213" text-anchor="middle" font-size="10">EXTERNAL 운영 · 해시체인·TSA</text>
+            </g>
+            <g>
+              <rect class="node-box" x="52" y="300" width="196" height="66" rx="10"/>
+              <text class="nt" x="150" y="326" text-anchor="middle" font-size="13">NHIS · HIRA</text>
+              <text class="ns" x="150" y="346" text-anchor="middle" font-size="10">자격조회·EDI·약가·KCD</text>
+            </g>
+            <g>
+              <rect class="node-box" x="512" y="300" width="196" height="66" rx="10"/>
+              <text class="nt" x="610" y="326" text-anchor="middle" font-size="13">Jitsi · FCM · Clinic</text>
+              <text class="ns" x="610" y="346" text-anchor="middle" font-size="10">화상·푸시·의원 연동</text>
+            </g>
+          </svg>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>시스템</th><th>역할</th><th>프로토콜 · 인증</th><th>방향</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td><strong>ERP</strong> (infra-core)</td><td>진료비 책정·계산의 <strong>SoT</strong>. HIS는 <code>billing.line_recorded</code> 발행 후 invoice 소비 (D-6 계약)</td><td>SSO(aud/jti) · outbox · 웹훅 HMAC · piiReadKey 분리</td><td>양방향</td><td><span class="pill good">운영</span></td></tr>
+            <tr><td><strong>WeRU.B</strong> 의료 AI</td><td>STT·화자분리(scribe) · NER+SOAP · 약물대체·DUR · FHIR · Medical Law · 아바타 (v2.121.0)</td><td>Bearer gpuKey(<code>sk-</code>) · kill-switch <code>ai.server.enabled</code>→503 · PHI 비식별</td><td>HIS→AI</td><td><span class="pill good">운영</span></td></tr>
+            <tr><td><strong>OpenPACS</strong></td><td>DICOM 영상 저장·조회 (Orthanc·OHIF·FastAPI). <strong>별도 저장소</strong></td><td>nginx <code>/pacs/·/dicom-web/·/wado</code> · SSO aud=pacs</td><td>HIS→링크</td><td><span class="pill good">운영</span></td></tr>
+            <tr><td><strong>sign</strong> 전자서명</td><td>외부 전자서명 서비스 — CPOE 5행위·거버넌스 의사록/의결 해시체인 봉인(+TSA 앵커)</td><td><code>sign.mode=EXTERNAL</code> 풀전환(v3.85~) · 스트림 <code>his-orders</code>·<code>his-governance</code>(v3.89) · HSM 키수탁(법무 게이트) · 판독의 SSO aud=sign · e-sign#6 <code>sign.completed</code></td><td>양방향</td><td><span class="pill good">운영</span></td></tr>
+            <tr><td><strong>NHIS · HIRA</strong></td><td>자격조회 · EDI 청구 · 약가(급여상한금액표) · KCD-8 상병</td><td>시뮬→실연동 어댑터 (dev-simulation-registry)</td><td>양방향</td><td><span class="pill blue">어댑터</span></td></tr>
+            <tr><td><strong>Jitsi · FCM · Clinic</strong></td><td>원격진료 화상(self-hosted) · 모바일 푸시 · 의원 연동(floor·schedule)</td><td>Jitsi :8443 · FCM 딥링크 · clinic-integration</td><td>양방향</td><td><span class="pill good">운영</span></td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <!-- 08 INFRA -->
+      <section id="infra">
+        <div class="eyebrow">Infrastructure · 운영자 · 개발자</div>
+        <h2>기술 스택 · 인프라 · 포트</h2>
+        <div class="grid g3">
+          <div class="card"><h4 style="margin-top:0">Frontend</h4><p style="margin:0;font-size:13px">Next.js 15 · Tailwind · shadcn/ui · Zustand · TanStack Query · React Hook Form + Zod · Expo SDK 56</p></div>
+          <div class="card"><h4 style="margin-top:0">Backend</h4><p style="margin:0;font-size:13px">NestJS · Prisma ORM · PostgreSQL 16 · Redis 7 · Custom JWT + RBAC · pm2</p></div>
+          <div class="card"><h4 style="margin-top:0">Infra</h4><p style="margin:0;font-size:13px">Turborepo · Docker Compose(pg·redis) · nginx · 헤드리스 PDF · <code>his.example.org</code></p></div>
+        </div>
+        <h3>포트 맵</h3>
+        <div class="tw"><table>
+          <thead><tr><th>포트</th><th>서비스</th><th>소유</th></tr></thead>
+          <tbody>
+            <tr><td class="num">3000</td><td>Hospital RUN Web</td><td><span class="pill tel">HIS</span></td></tr>
+            <tr><td class="num">4000</td><td>Hospital RUN API</td><td><span class="pill tel">HIS</span></td></tr>
+            <tr><td class="num">5432</td><td>PostgreSQL</td><td><span class="pill off">공유</span></td></tr>
+            <tr><td class="num">6379</td><td>Redis</td><td><span class="pill off">공유</span></td></tr>
+            <tr><td class="num">3001</td><td>OHIF Viewer</td><td><span class="pill blue">OpenPACS</span></td></tr>
+            <tr><td class="num">8042</td><td>Orthanc (DICOM)</td><td><span class="pill blue">OpenPACS</span></td></tr>
+            <tr><td class="num">8001 · 4242</td><td>FastAPI · Orthanc DICOM</td><td><span class="pill blue">OpenPACS</span></td></tr>
+            <tr><td class="num">8443</td><td>Jitsi (화상)</td><td><span class="pill off">hospital-jitsi</span></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note crit"><span class="h">공유 자원 주의</span>PostgreSQL·Redis는 OpenPACS와 <strong>공유</strong>합니다. <code>hospital</code> 사용자 비밀번호(<code>secret</code>) 변경 금지, 전체 재시작 금지. 재시작은 개별 지정: <code>docker compose restart api web</code>.</div>
+      </section>
+
+      <!-- 09 DEPLOY -->
+      <section id="deploy">
+        <div class="eyebrow">Infrastructure · 운영자</div>
+        <h2>배포 파이프라인</h2>
+        <p>배포는 <code>./infra/scripts/deploy.sh</code>로 수행하며 <strong>자동 DB 백업</strong>을 포함합니다. git 커밋이 아닌 <strong>working tree rsync</strong> 방식이라 미커밋 변경도 배포됩니다(stash 격리).</p>
+        <div class="tw"><table>
+          <thead><tr><th>명령</th><th>동작</th></tr></thead>
+          <tbody>
+            <tr><td><code>deploy.sh --api</code></td><td>API만 배포</td></tr>
+            <tr><td><code>deploy.sh --schema --api</code></td><td>스키마 변경 + API (자동 백업)</td></tr>
+            <tr><td><code>deploy.sh --all</code></td><td>전체 배포</td></tr>
+            <tr><td><code>deploy.sh --backup</code></td><td>DB 백업만</td></tr>
+          </tbody>
+        </table></div>
+        <div class="grid g2" style="margin-top:6px">
+          <div class="note warn"><span class="h">BE 수정 후 필수</span><code>nest build</code> 필수 — pm2가 <code>dist/main.js</code>를 실행하므로 <code>src</code> 수정만으로는 반영되지 않습니다.</div>
+          <div class="note warn"><span class="h">신규 Prisma 모델</span><code>deploy.sh --api</code>는 <code>prisma generate</code>를 하지 않습니다. 신규 모델은 <code>prisma/</code> rsync + 서버에서 generate + build + restart(안 하면 크래시).</div>
+          <div class="note crit"><span class="h">데이터 소실 금지</span><code>prisma db push --accept-data-loss</code> <strong>절대 금지</strong>. 플래그 없는 <code>db push</code>는 손실 시 거부되어 안전.</div>
+          <div class="note"><span class="h">빌드 환경변수</span><code>NEXT_PUBLIC_API_URL=''</code> 필수 — 브라우저가 상대경로를 사용하도록. Self-healing: MediaService가 서버 시작 시 파일시스템 스캔 → DB 자동 복구.</div>
+        </div>
+      </section>
+
+      <!-- 10 SECURITY -->
+      <section id="security">
+        <div class="eyebrow">Security · 연동팀 · 운영자</div>
+        <h2>보안 · 인증 · 감사 · 컴플라이언스</h2>
+        <div class="grid g2">
+          <div class="card">
+            <h4 style="margin-top:0">인증 · 인가</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li>Custom JWT + <strong>RBAC Guard</strong> (ADR-001) · 기능 접근 매트릭스(access-control)</li>
+              <li>직원 <strong>패스워드리스 SSO</strong>(WebAuthn·내부 IdP·디바이스·Break-glass)</li>
+              <li><strong>Step-up 생체 승인</strong> — 차트 서명·처방(Tier2, config 게이트)</li>
+              <li>포털 <code>PortalOrPatientGuard</code> · 보호자 위임 열람</li>
+              <li>주민번호 HMAC 블라인드 인덱스(복호화 없는 중복 확인)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0">감사 · 거버넌스</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li>audit / audit-enhanced · 블록체인 앵커링 cron</li>
+              <li>데이터 보유·파기(retention) — DRY-RUN + 3중 게이트(법정 클램프)</li>
+              <li>SSRF 방지 공용 <code>safeFetch</code> · egress 제어</li>
+              <li>PHI 비식별 — AI 전송 시 <code>[환자명]</code> 후치환 · 100KB 가드</li>
+              <li>EMR 인증 · IPSG · JCI · QPS 인증마크</li>
+            </ul>
+          </div>
+        </div>
+        <div class="note"><span class="h">4-eyes · Break-glass</span>민감 작업(직원 자격 부여 등)은 <code>AdminApproval</code> 4-eyes 승인. 비상 접근은 Break-glass로 감사 로깅. HSM 키 수탁은 법무·조달 게이트 후 활성화(go-live 체크리스트).</div>
+      </section>
+
+      <!-- 11 ROLES -->
+      <section id="roles">
+        <div class="eyebrow">Manual · 운영자 · 의료진</div>
+        <h2>역할별 사용 매뉴얼</h2>
+        <p>화면 빠른 이동: <span class="kbd">g</span> 입력 후 화면 코드 → 이동. 통합검색 <span class="kbd">Cmd/Ctrl</span>+<span class="kbd">K</span>. 화면 내 액션 핫키 <span class="kbd">⌘/Ctrl</span>+<span class="kbd">Enter</span>·<span class="kbd">Alt</span>+문자, 도움말 <span class="kbd">?</span>.</p>
+        <div class="tw"><table>
+          <thead><tr><th>역할</th><th>핵심 화면 · 워크스테이션</th><th>주요 절차</th></tr></thead>
+          <tbody>
+            <tr><td><strong>원무 · 접수</strong></td><td>접수 데스크 · 접수 WS · 수납</td><td>환자 검색/신규 등록(주소검색·주민번호 암호화·신분증 OCR) → 자격조회 → 접수 → 수납(분할·미수금)</td></tr>
+            <tr><td><strong>의사</strong></td><td>환자차트 · CPOE · 콕핏 · 큰 화면 board</td><td>진료 시작 → 주상병(KCD-8) → 오더/처방(DUR·포뮬러리 게이트) → 차트 서명(step-up)</td></tr>
+            <tr><td><strong>간호사</strong></td><td>간호 스테이션 · 태블릿(라운드보드·MAR) · 간호기록</td><td>라운드 → 바이탈/EWS → 투약(MAR) → 간호기록(AI 초안→검토·서명)</td></tr>
+            <tr><td><strong>약사</strong></td><td>약국 · 조제 · 마약류 · 약제 검수</td><td>처방 검토(DUR) → 조제 → 마약류 대장 → AI 약물설명 승인(<code>/admin/drug-explain</code>)</td></tr>
+            <tr><td><strong>검사 · 영상</strong></td><td>검사실 WS · 병리 · 영상(PACS 링크)</td><td>오더 접수 → 결과 입력/판독 → PACS(<code>/pacs/</code>) 조회</td></tr>
+            <tr><td><strong>관리자</strong></td><td>Admin 105p · 대시보드 템플릿 · 코드마스터 · 포뮬러리</td><td>역할/부서 권한 · 코드 관리 · 시행게이트(OFF/WARN/BLOCK) · CMS</td></tr>
+            <tr><td><strong>환자</strong></td><td>환자 포털 · 모바일 앱(31화면)</td><td>예약 · 검사결과(쉽게보기) · 의무기록 발급 · 원격진료 · 셀프 체크인</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note"><span class="h">테스트 계정</span>관리자 <code>admin@hospital.example.org</code> / <code>staff1234!</code> (15분 반복실패 잠금) · 환자 <code>patient1234!</code>. 상세는 <code>docs/05-reference/TEST-ACCOUNTS.md</code>.</div>
+      </section>
+
+      <!-- 12 OPS -->
+      <section id="ops">
+        <div class="eyebrow">Manual · 운영자</div>
+        <h2>운영 런북</h2>
+        <div class="grid g2">
+          <div class="card">
+            <h4 style="margin-top:0">일상 운영</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li>서비스 재시작: <code>docker compose restart api web</code> (전체 restart 금지)</li>
+              <li>DB 백업: <code>deploy.sh --backup</code></li>
+              <li>개발 데모 데이터 자정 롤포워드: config <code>dev.demoDateRoll</code></li>
+              <li>시드: <code>npm run db:seed</code> (멱등 · 15,588줄)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0">config 게이트 (기본 OFF)</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li><code>ai.server.enabled</code> — AI 서버 kill-switch</li>
+              <li><code>formulary.enforce</code> — 원내 처방집 시행</li>
+              <li><code>diagnosis.restrictionEnforce</code> — 상병 제한</li>
+              <li><code>stepUpActions</code> — 생체 승인 대상</li>
+              <li>대부분 신규 기능은 config OFF로 배포 후 점진 활성화</li>
+            </ul>
+          </div>
+        </div>
+        <p style="font-size:13px">상세 런북: <code>docs/OPERATIONS.md</code> · <code>docs/DEPLOYMENT.md</code> · <code>docs/05-reference/go-live-checklist-security.md</code> · <code>fcm-push-activation-runbook.md</code> · <code>nursing-ai-pilot-runbook.md</code> · <code>terminal-zero-trust-production-ops.md</code>.</p>
+      </section>
+
+      <!-- 13 ONBOARDING -->
+      <section id="onboarding">
+        <div class="eyebrow">Developer · 개발자</div>
+        <h2>개발자 온보딩 · 컨벤션</h2>
+        <h3>로컬 셋업</h3>
+        <pre>npm run docker:up     # PostgreSQL + Redis
+npm run db:migrate    # Prisma 마이그레이션
+npm run db:seed       # 초기 데이터 시드
+npm run dev           # 전체 서비스 (turbo)</pre>
+        <div class="grid g2">
+          <div class="card">
+            <h4 style="margin-top:0">네이밍 · 구조</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li>PascalCase(컴포넌트) · camelCase(함수) · kebab-case(파일/폴더) · snake_case(DB 컬럼)</li>
+              <li>Import 순서: builtins → external → internal(<code>@/</code>) → relative → types → styles</li>
+              <li>환자명 <code>familyName</code>/<code>givenName</code> (ADR-002)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0">API 규약</h4>
+            <ul style="margin:0;font-size:13.5px">
+              <li>프리픽스 <code>/api/v1/</code> · <code>/fhir/R4/</code></li>
+              <li>응답 <code>{ data, meta }</code> / 오류 <code>{ error, meta }</code></li>
+              <li>DTO는 <strong>class-validator 데코레이터 필수</strong> (전역 whitelist ValidationPipe가 미데코 필드 strip)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="note crit"><span class="h">기존 기능 삭제 방지</span>페이지 418+·모듈 201+ 규모. 매 작업 시 <strong>기존 기능 삭제 여부를 반드시 확인</strong>하세요. 멀티 CLI 동시 작업 시 staged 파일이 섞이므로 add 직후 즉시 커밋하거나 worktree 격리.</div>
+      </section>
+
+      <!-- 14 GOTCHAS -->
+      <section id="gotchas">
+        <div class="eyebrow">Developer · 개발자</div>
+        <h2>함정 모음 — 실전 교훈</h2>
+        <div class="tw"><table>
+          <thead><tr><th>영역</th><th>함정</th><th>대응</th></tr></thead>
+          <tbody>
+            <tr><td>Prisma raw</td><td><code>$queryRaw</code> uuid IN 시 <code>42883</code> 오류</td><td><code>Prisma.join</code> uuid에 <code>::text</code> 캐스팅 필수 · raw는 <code>@map</code> 실컬럼명 · tsc 통과 ≠ 실DB 동작</td></tr>
+            <tr><td>Nest 라우트</td><td>동적 <code>:id</code>가 리터럴 경로를 선점</td><td>리터럴(<code>policy</code> 등)을 <code>:id</code>보다 <strong>위에</strong> 선언</td></tr>
+            <tr><td>DTO 검증</td><td>미데코 DTO 필드가 <code>undefined</code>로 strip</td><td>class-validator 데코레이터 부여 · 실 body 호출로 검증</td></tr>
+            <tr><td>포털 가드</td><td>staff <code>JwtAuthGuard</code>면 포털에서 401</td><td><code>/portal/*</code>는 <code>PortalOrPatientGuard</code> 필수 · 중복 라우트 금지</td></tr>
+            <tr><td>outbox</td><td><code>timestamp</code>(no tz)라 KST <code>now()</code>가 +9h 미래로 보여 미발송</td><td><code>timestamptz</code>로 수정 · 테스트는 Prisma/UTC</td></tr>
+            <tr><td>홈페이지</td><td><code>(homepage)</code>에서 <code>apiClient</code> 사용 시 실패</td><td><code>fetch()</code> 직접 사용 · 브라우저는 상대경로</td></tr>
+            <tr><td>위젯</td><td>react-grid-layout React 19 비호환</td><td>@dnd-kit 사용</td></tr>
+            <tr><td>AI 프록시</td><td>ollama NDJSON 스트림 · Python UA 403 · nginx 60s 타임아웃</td><td>NDJSON 병합 · UA 우회 · 장시간은 비동기 잡</td></tr>
+            <tr><td>상병 마스터</td><td>성별 코드 <code>X=여</code>/<code>Y=남</code> · 점표기</td><td>정규화 후 비교</td></tr>
+            <tr><td>extractJson</td><td>AI 응답에 복수 JSON 혼입</td><td>중괄호 짝으로 첫 객체만 추출</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <!-- 15 APPENDIX -->
+      <section id="appendix">
+        <div class="eyebrow">Reference</div>
+        <h2>부록 — 문서맵</h2>
+        <p>저장소 <code>docs/</code>는 PDCA 구조입니다. 본 허브가 최상위 정본이며, 세부는 아래를 참조하세요.</p>
+        <div class="tw"><table>
+          <thead><tr><th>경로</th><th>내용</th><th>대상</th></tr></thead>
+          <tbody>
+            <tr><td><code>CLAUDE.md</code></td><td>프로젝트 규약·규모·금지사항 (v3.97.0, 최신)</td><td>개발자</td></tr>
+            <tr><td><code>docs/01-plan/features/</code></td><td>기능 기획서 211건</td><td>기획·개발</td></tr>
+            <tr><td><code>docs/02-design/</code></td><td>설계서 · clinical-chart-engine · scribe-stt-adapter</td><td>개발</td></tr>
+            <tr><td><code>docs/03-analysis/</code></td><td>갭·영향도 분석 19건</td><td>개발</td></tr>
+            <tr><td><code>docs/04-report/</code></td><td>릴리즈·완료 보고서 50건 (RELEASE-v3.4x.0)</td><td>전체</td></tr>
+            <tr><td><code>docs/05-reference/</code></td><td>API·연동·핸드오프 70건 (ERP·AI·sign·PACS·HIRA)</td><td>연동팀</td></tr>
+            <tr><td><code>docs/05-reference/MEDICAL_AI_INTEGRATION_v2.121.0.md</code></td><td>WeRU.B AI 연동 가이드</td><td>연동팀</td></tr>
+            <tr><td><code>docs/05-reference/his-erp-event-catalog-v1.md</code></td><td>ERP 이벤트 카탈로그</td><td>연동팀</td></tr>
+            <tr><td><code>docs/OPERATIONS.md</code> · <code>DEPLOYMENT.md</code></td><td>운영·배포 매뉴얼</td><td>운영자</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note"><span class="h">canonical 동기화</span><code>README.md</code>·<code>docs/INDEX.md</code>·<code>API-REFERENCE.md</code>는 v3.97.0(2026-08-10) 실측으로 동기화 완료.</div>
+        <div class="foot">
+          Hospital RUN 아키텍처 &amp; 문서 허브 · 실측 기준 2026-08-10 · 운영 버전 v3.97.0 · <code>his.example.org</code><br>
+          이 문서는 저장소 기록(CLAUDE.md·docs·PDCA·릴리즈 노트) 및 코드베이스 실측을 바탕으로 생성되었습니다.
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('themeBtn');
+  var themeIco = document.getElementById('themeIco');
+  themeBtn.addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    if(!cur){
+      cur = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    var next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    themeIco.textContent = next === 'dark' ? '☾' : '☀';
+  });
+
+  // mobile menu
+  var sidebar = document.getElementById('sidebar');
+  var scrim = document.getElementById('scrim');
+  var menuBtn = document.getElementById('menuBtn');
+  function closeMenu(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  menuBtn.addEventListener('click', function(){ sidebar.classList.toggle('open'); scrim.classList.toggle('show'); });
+  scrim.addEventListener('click', closeMenu);
+
+  // scroll-spy
+  var links = Array.prototype.slice.call(document.querySelectorAll('#nav a'));
+  var map = {};
+  links.forEach(function(a){
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if(el) map[id] = a;
+    a.addEventListener('click', closeMenu);
+  });
+  var sections = Object.keys(map).map(function(id){ return document.getElementById(id); });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        var a = map[e.target.id];
+        if(a){ a.classList.add('active'); }
+      }
+    });
+  }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: hospitalrun
+      POSTGRES_USER: hospital
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      TZ: Asia/Seoul
+      PGTZ: Asia/Seoul
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospital -d hospitalrun"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    # maxmemory 상한 + LRU eviction — 무제한(noeviction) 시 세션/캐시 누적으로 OOM → 인증 전체 장애 방지.
+    # ⚠️ allkeys-lru 는 TTL 없는 세션/passkey 키도 evict 가능 — maxmemory 를 정상 워킹셋보다 넉넉히
+    #    잡아 eviction 이 사실상 발생하지 않게 한다(512mb 는 prod.yml 과 동일 기준). 세션류는 TTL 부여 권장.
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    environment:
+      TZ: Asia/Seoul
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

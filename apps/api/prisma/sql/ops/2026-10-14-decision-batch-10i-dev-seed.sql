@@ -1,0 +1,23 @@
+-- 2026-10-14 v4.90.0 — 결정 등록부 배치 10-I(수납 감면 권한 P3-3 · 미등재 단가 라인 P5-1 · 선수금 환불 복원 · 수납·청구 결함 발굴) — v4.92.0 에서 두 건 추가(이미 적용한 곳에서도 없을 때만 넣는다) 개발 시드 기록
+-- seed.ts DECISION_DEV_SEEDS 와 같은 값 · 🔴 실결정 아님(DEV-SEED) · 없을 때만 넣는다(사람이 기록했으면 건드리지 않는다)
+-- 적용: deploy.sh --backup 뒤 · 한 트랜잭션
+BEGIN;
+INSERT INTO system_configs (id, key, value, category, label, updated_by, created_at, updated_at)
+SELECT gen_random_uuid(), 'decision.billing.discountAuthorization', replace('{"choice":"KEEP_CASHIER_ENTRY","legalReviewRef":"개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)","authorityClaim":"개발 시드(DEV-SEED) — 위원회 의결 미검증","note":"실결정 아님 — 위원회 안건(/admin/gld)으로 의결해 다시 기록해야 결정으로 센다 · 시드 선택 이유: 현행 구현 그대로 — 막으면 수납이 멈춘다(원칙 2·4) · 감면 내역은 감사 로그·청구에 남는다","decidedByUserId":"__ADMIN__","decidedAt":"2026-10-10T03:00:00.000Z","applied":false,"appliedDetail":"이 선택은 아무것도 바꾸지 않는다"}', '__ADMIN__', coalesce((SELECT id::text FROM users WHERE email = 'admin@hospital.example.org'), ''))::jsonb, 'general', 'decision.billing.discountAuthorization', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM system_configs WHERE key = 'decision.billing.discountAuthorization');
+INSERT INTO decision_log_entries (id, decision_key, kind, choice, basis_ref, authority_claim, actor_user_id, detail, occurred_at)
+SELECT gen_random_uuid(), 'billing.discountAuthorization', 'SEED_RECORDED', 'KEEP_CASHIER_ENTRY', '개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)', '개발 시드(DEV-SEED) — 위원회 의결 미검증', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), '{"note":"개발 시드 — 실결정 아님(위원회 의결·권한자 기록으로 다시 남겨야 결정으로 센다)"}'::jsonb, '2026-10-10T03:00:00.000Z'
+WHERE NOT EXISTS (SELECT 1 FROM decision_log_entries WHERE decision_key = 'billing.discountAuthorization');
+INSERT INTO system_configs (id, key, value, category, label, updated_by, created_at, updated_at)
+SELECT gen_random_uuid(), 'decision.billing.unpricedLinePolicy', replace('{"choice":"KEEP_ZERO_LINE_WARN","legalReviewRef":"개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)","authorityClaim":"개발 시드(DEV-SEED) — 위원회 의결 미검증","note":"실결정 아님 — 위원회 안건(/admin/gld)으로 의결해 다시 기록해야 결정으로 센다 · 시드 선택 이유: 현행 구현 그대로 — 막으면 수납이 멈춘다(원칙 2·4) · 경고·화면 표시로 마스터 보정을 부른다","decidedByUserId":"__ADMIN__","decidedAt":"2026-10-10T03:00:00.000Z","applied":false,"appliedDetail":"이 선택은 아무것도 바꾸지 않는다"}', '__ADMIN__', coalesce((SELECT id::text FROM users WHERE email = 'admin@hospital.example.org'), ''))::jsonb, 'general', 'decision.billing.unpricedLinePolicy', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM system_configs WHERE key = 'decision.billing.unpricedLinePolicy');
+INSERT INTO decision_log_entries (id, decision_key, kind, choice, basis_ref, authority_claim, actor_user_id, detail, occurred_at)
+SELECT gen_random_uuid(), 'billing.unpricedLinePolicy', 'SEED_RECORDED', 'KEEP_ZERO_LINE_WARN', '개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)', '개발 시드(DEV-SEED) — 위원회 의결 미검증', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), '{"note":"개발 시드 — 실결정 아님(위원회 의결·권한자 기록으로 다시 남겨야 결정으로 센다)"}'::jsonb, '2026-10-10T03:00:00.000Z'
+WHERE NOT EXISTS (SELECT 1 FROM decision_log_entries WHERE decision_key = 'billing.unpricedLinePolicy');
+INSERT INTO system_configs (id, key, value, category, label, updated_by, created_at, updated_at)
+SELECT gen_random_uuid(), 'decision.billing.depositRefundRestore', replace('{"choice":"REFUND_TO_PATIENT","legalReviewRef":"개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)","authorityClaim":"개발 시드(DEV-SEED) — 위원회 의결 미검증","note":"실결정 아님 — 위원회 안건(/admin/gld)으로 의결해 다시 기록해야 결정으로 센다 · 시드 선택 이유: 현행 구현 그대로 — 자동으로 예치금을 되살리지 않는다(창구가 응답의 선수금 몫을 보고 처리)","decidedByUserId":"__ADMIN__","decidedAt":"2026-10-10T03:00:00.000Z","applied":false,"appliedDetail":"이 선택은 아무것도 바꾸지 않는다"}', '__ADMIN__', coalesce((SELECT id::text FROM users WHERE email = 'admin@hospital.example.org'), ''))::jsonb, 'general', 'decision.billing.depositRefundRestore', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM system_configs WHERE key = 'decision.billing.depositRefundRestore');
+INSERT INTO decision_log_entries (id, decision_key, kind, choice, basis_ref, authority_claim, actor_user_id, detail, occurred_at)
+SELECT gen_random_uuid(), 'billing.depositRefundRestore', 'SEED_RECORDED', 'REFUND_TO_PATIENT', '개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)', '개발 시드(DEV-SEED) — 위원회 의결 미검증', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), '{"note":"개발 시드 — 실결정 아님(위원회 의결·권한자 기록으로 다시 남겨야 결정으로 센다)"}'::jsonb, '2026-10-10T03:00:00.000Z'
+WHERE NOT EXISTS (SELECT 1 FROM decision_log_entries WHERE decision_key = 'billing.depositRefundRestore');
+COMMIT;

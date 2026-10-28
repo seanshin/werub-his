@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>환자 포털 생애주기 — 설명 자료</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Pretendard Variable', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.7; }
+
+  /* ── Header ── */
+  .header { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; padding: 60px 40px; text-align: center; }
+  .header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 8px; }
+  .header p { font-size: 1.1rem; opacity: 0.85; max-width: 700px; margin: 0 auto; }
+  .header .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 6px 16px; border-radius: 100px; font-size: 0.85rem; font-weight: 600; margin-top: 16px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 60px; }
+  .section-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: #1e293b; }
+  .section-desc { font-size: 0.95rem; color: #64748b; margin-bottom: 24px; }
+
+  /* ── Overview Diagram ── */
+  .overview { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 48px; }
+  .flow-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+  .flow-node { padding: 14px 20px; border-radius: 16px; font-weight: 700; font-size: 0.9rem; text-align: center; min-width: 120px; position: relative; }
+  .flow-arrow { color: #94a3b8; font-size: 1.2rem; font-weight: 300; }
+  .flow-node.idle { background: #f1f5f9; color: #64748b; border: 2px solid #e2e8f0; }
+  .flow-node.pre-visit { background: #eff6ff; color: #2563eb; border: 2px solid #bfdbfe; }
+  .flow-node.outpatient { background: #ecfdf5; color: #059669; border: 2px solid #a7f3d0; }
+  .flow-node.inpatient { background: #eff6ff; color: #1d4ed8; border: 2px solid #93c5fd; }
+  .flow-node.pre-discharge { background: #f0fdf4; color: #16a34a; border: 2px solid #86efac; }
+  .flow-node.post-discharge { background: #fdf4ff; color: #9333ea; border: 2px solid #d8b4fe; }
+  .flow-num { position: absolute; top: -10px; left: -10px; width: 24px; height: 24px; border-radius: 50%; background: #1e293b; color: white; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+  /* ── Phase Cards ── */
+  .phase-card { background: white; border-radius: 20px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); border-left: 5px solid; }
+  .phase-card.idle { border-left-color: #94a3b8; }
+  .phase-card.pre-visit { border-left-color: #2563eb; }
+  .phase-card.outpatient { border-left-color: #059669; }
+  .phase-card.pre-admission { border-left-color: #d97706; }
+  .phase-card.inpatient { border-left-color: #1d4ed8; }
+  .phase-card.pre-discharge { border-left-color: #16a34a; }
+  .phase-card.post-discharge { border-left-color: #9333ea; }
+
+  .phase-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .phase-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
+  .phase-icon.idle { background: #f1f5f9; }
+  .phase-icon.pre-visit { background: #eff6ff; }
+  .phase-icon.outpatient { background: #ecfdf5; }
+  .phase-icon.pre-admission { background: #fff7ed; }
+  .phase-icon.inpatient { background: #eff6ff; }
+  .phase-icon.pre-discharge { background: #f0fdf4; }
+  .phase-icon.post-discharge { background: #fdf4ff; }
+
+  .phase-name { font-size: 1.3rem; font-weight: 800; }
+  .phase-eng { font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
+  .phase-situation { font-size: 0.95rem; color: #64748b; }
+
+  .phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+  @media (max-width: 768px) { .phase-grid { grid-template-columns: 1fr; } }
+
+  .info-box { background: #f8fafc; border-radius: 12px; padding: 16px; }
+  .info-box h4 { font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .info-box ul { list-style: none; padding: 0; }
+  .info-box li { font-size: 0.9rem; padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; }
+  .info-box li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #2563eb; flex-shrink: 0; margin-top: 8px; }
+  .info-box.mind li::before { background: #d97706; }
+  .info-box.screen li::before { background: #059669; }
+  .info-box.trigger li::before { background: #dc2626; }
+
+  .scenario-box { background: linear-gradient(135deg, #f0f9ff 0%, #faf5ff 100%); border-radius: 12px; padding: 20px; margin-top: 16px; border: 1px solid #e0e7ff; }
+  .scenario-box .label { font-size: 0.75rem; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .scenario-box p { font-size: 0.9rem; color: #374151; line-height: 1.8; }
+
+  /* ── Transition Diagram ── */
+  .transition-table { width: 100%; border-collapse: separate; border-spacing: 0; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .transition-table th { background: #1e293b; color: white; padding: 12px 16px; font-size: 0.8rem; font-weight: 700; text-align: left; }
+  .transition-table td { padding: 12px 16px; font-size: 0.9rem; border-bottom: 1px solid #f1f5f9; }
+  .transition-table tr:last-child td { border-bottom: none; }
+  .transition-table tr:hover td { background: #f8fafc; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+  .tag.auto { background: #dbeafe; color: #1d4ed8; }
+  .tag.his { background: #fef3c7; color: #92400e; }
+
+  /* ── Tab Behavior ── */
+  .tab-matrix { width: 100%; border-collapse: separate; border-spacing: 0; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .tab-matrix th { background: #1e293b; color: white; padding: 10px 14px; font-size: 0.8rem; font-weight: 700; text-align: center; }
+  .tab-matrix td { padding: 10px 14px; font-size: 0.82rem; border-bottom: 1px solid #f1f5f9; text-align: center; }
+  .tab-matrix td:first-child { text-align: left; font-weight: 600; }
+  .tab-matrix tr:hover td { background: #f8fafc; }
+  .highlight { background: #eff6ff; font-weight: 600; color: #1d4ed8; }
+
+  /* ── Footer ── */
+  .footer { text-align: center; padding: 40px 24px; color: #94a3b8; font-size: 0.85rem; }
+  .footer a { color: #2563eb; text-decoration: none; }
+
+  /* ── Mockup ── */
+  .mockup-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
+  .mockup-phone { width: 280px; background: white; border-radius: 28px; border: 3px solid #e2e8f0; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+  .mockup-statusbar { height: 24px; background: #1e293b; }
+  .mockup-content { padding: 16px; min-height: 400px; }
+  .mockup-label { text-align: center; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-top: 12px; }
+  .mock-card { border-radius: 12px; padding: 12px; margin-bottom: 10px; font-size: 0.75rem; }
+  .mock-card.hero { background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; }
+  .mock-card.alert { background: #fff7ed; border: 1px solid #fed7aa; color: #92400e; }
+  .mock-card.normal { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; }
+  .mock-card.success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+  .mock-card.purple { background: #faf5ff; border: 1px solid #d8b4fe; color: #581c87; }
+  .mock-card h5 { font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
+  .mock-card p { opacity: 0.8; line-height: 1.4; }
+  .mock-nav { display: flex; border-top: 1px solid #e2e8f0; }
+  .mock-nav-item { flex: 1; text-align: center; padding: 8px 0; font-size: 0.65rem; color: #94a3b8; }
+  .mock-nav-item.active { color: #2563eb; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ Header ══════════════════════════ -->
+<div class="header">
+  <h1>환자 포털 생애주기 시스템</h1>
+  <p>환자의 병원 이용 상태에 따라 포털이 자동으로 최적화된 화면을 제공합니다</p>
+  <div class="badge">Hospital RUN v3.2.0 &mdash; Patient Portal Lifecycle v1.1</div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════ 개요 ══════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">1. 개요 &mdash; 왜 필요한가?</h2>
+  <p class="section-desc">
+    기존 환자 포털은 <strong>외래 환자 중심</strong>으로 설계되어, 입원 환자가 접속해도 동일한 화면을 보게 됩니다.<br>
+    생애주기 시스템은 HIS(병원정보시스템)에서 접수/입원/퇴원 이벤트가 발생하면, 포털 화면이 <strong>자동으로 전환</strong>됩니다.
+  </p>
+
+  <div class="overview">
+    <h3 style="text-align:center; font-size: 1.1rem; font-weight: 700; margin-bottom: 24px; color: #64748b;">환자 생애주기 8단계 흐름도</h3>
+    <div class="flow-row">
+      <div class="flow-node idle"><div class="flow-num">1</div>원외<br><small>건강관리</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node pre-visit"><div class="flow-num">2</div>방문 전<br><small>D-7~D-0</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node outpatient"><div class="flow-num">3</div>당일 외래<br><small>접수~수납</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node inpatient" style="border-width:3px;"><div class="flow-num">4</div>입원 전<br><small>준비</small></div>
+    </div>
+    <div class="flow-row">
+      <div class="flow-node inpatient" style="border-width:3px;"><div class="flow-num">5</div>입원 중<br><small>일정/투약/회진</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node pre-discharge"><div class="flow-num">6</div>퇴원 준비<br><small>체크리스트</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node post-discharge"><div class="flow-num">7</div>퇴원 후<br><small>D+1~D+30</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node idle"><div class="flow-num">8</div>원외<br><small>복귀</small></div>
+    </div>
+    <p style="text-align:center; font-size: 0.82rem; color: #94a3b8; margin-top: 16px;">
+      * 응급 재입원: ①&#8594;⑤ 직행 &nbsp;|&nbsp; 당일 입원: ③&#8594;⑤ 직행 &nbsp;|&nbsp; 만성질환: ⑦&#8594;① 전환 없이 지속 관리
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════ Phase 상세 ══════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">2. Phase별 상세 설명</h2>
+  <p class="section-desc">각 Phase에서 환자가 처한 상황, 심리, 포털이 보여주는 화면을 설명합니다.</p>
+
+  <!-- Phase 1: IDLE -->
+  <div class="phase-card idle">
+    <div class="phase-header">
+      <div class="phase-icon idle">🏠</div>
+      <div>
+        <div class="phase-name">Phase ① 원외 건강관리</div>
+        <div class="phase-eng">IDLE &mdash; 병원 방문 예정 없음</div>
+        <div class="phase-situation">병원 밖에서 일상생활. 만성질환 관리, 복용약 체크, 건강 추이 확인에 집중.</div>
+      </div>
+    </div>
+    <div class="phase-grid">
+      <div class="info-box mind">
+        <h4>환자 심리</h4>
+        <ul>
+          <li>내 건강 상태가 괜찮은 건지 궁금하다</li>
+          <li>약을 빼먹지 않고 잘 먹고 있는지 확인하고 싶다</li>
+          <li>지난 검사 결과가 어떤 의미인지 알고 싶다</li>
+        </ul>
+      </div>
+      <div class="info-box screen">
+        <h4>포털 화면</h4>
+        <ul>
+          <li>AI 건강 점수 (원형 게이지, 87점)</li>
+          <li>복용약 체크리스트 + 주간 복용률</li>
+          <li>자가 건강 기록 (혈압/혈당/체중)</li>
+          <li>검사 추이 차트 (6개월)</li>
+          <li>예방 검진 권장 카드</li>
+        </ul>
+      </div>
+    </div>
+    <div class="scenario-box">
+      <div class="label">시나리오</div>
+      <p>60세 당뇨 환자 박씨. 매일 아침 포털에서 혈당을 기록하고, 메트포르민 복용 체크를 한다.
+        AI가 "이번 주 혈당 평균이 130mg/dL로, 목표(120)보다 높습니다"라고 조언한다.
+        6개월간의 혈당 추이 그래프에서 점진적 개선을 확인한다.</p>
+    </div>
+  </div>
+
+  <!-- Phase 2: PRE_VISIT -->
+  <div class="phase-card pre-visit">
+    <div class="phase-header">
+      <div class="phase-icon pre-visit">📋</div>
+      <div>
+        <div class="phase-name">Phase ② 방문 전 준비</div>
+        <div class="phase-eng">PRE_VISIT &mdash; 예약일 D-7 ~ D-0</div>
+        <div class="phase-situation">예약일이 7일 이내. 문진표, 동의서, 금식 안내 등 사전 준비에 집중.</div>
+      </div>
+    </div>
+    <div class="phase-grid">
+      <div class="info-box mind">
+        <h4>환자 심리</h4>
+        <ul>
+          <li>뭘 준비해 가야 하지?</li>
+          <li>금식해야 하나? 약은 먹어도 되나?</li>
+          <li>병원 어디로 가야 하지?</li>
+        </ul>
+      </div>
+      <div class="info-box screen">
+        <h4>포털 화면</h4>
+        <ul>
+          <li>방문 준비 체크리스트 (프로그레스 바)</li>
+          <li>금식/복용 주의사항 카드</li>
+          <li>병원 길찾기 + 주차 안내</li>
+          <li>자동 알림: D-7 문진표, D-1 금식</li>
+        </ul>
+      </div>
+    </div>
+    <div class="scenario-box">
+      <div class="label">시나리오</div>
+      <p>45세 직장인 이씨. 내과 정기 진료가 이틀 후.
+        포털이 "D-2: 문진표 미작성, 금식 검사 있음"을 알린다.
+        퇴근 후 문진표를 작성하고, 내일 자정부터 금식임을 확인한다.
+        D-0 아침, "오늘 09:30 내과, 본관 3층 302호" 알림을 받는다.</p>
+    </div>
+  </div>
+
+  <!-- Phase 3: OUTPATIENT -->
+  <div class="phase-card outpatient">
+    <div class="phase-header">
+      <div class="phase-icon outpatient">🏥</div>
+      <div>
+        <div class="phase-name">Phase ③ 당일 외래</div>
+        <div class="phase-eng">OUTPATIENT_TODAY &mdash; 접수 ~ 수납</div>
+        <div class="phase-situation">병원 도착 후 접수/대기/진료/수납 과정. 실시간 대기 정보가 핵심.</div>
+      </div>
+    </div>
+    <div class="phase-grid">
+      <div class="info-box mind">
+        <h4>환자 심리</h4>
+        <ul>
+          <li>내 순서가 언제 오지?</li>
+          <li>얼마나 기다려야 하지?</li>
+          <li>진료 끝나면 뭘 해야 하지?</li>
+        </ul>
+      </div>
+      <div class="info-box screen">
+        <h4>포털 화면</h4>
+        <ul>
+          <li>진료 여정 타임라인 (접수→대기→진료→수납)</li>
+          <li>실시간 대기 번호 + 풀스크린 대기 화면</li>
+          <li>검사 순서 + 위치 안내</li>
+          <li>처방전 약국 전송</li>
+        </ul>
+      </div>
+    </div>
+    <div class="scenario-box">
+      <div class="label">시나리오</div>
+      <p>이씨가 병원에 도착하여 접수. 포털 홈이 "오늘의 진료 여정" 카드로 자동 전환.
+        "대기 번호 127 · 앞 3명 · 약 15분" — 풀스크린 대기 화면을 켜놓고 기다린다.
+        진료 후 "혈액검사(2층) → 수납(1층)" 순서 안내가 나타난다.</p>
+    </div>
+  </div>
+
+  <!-- Phase 4-5: INPATIENT -->
+  <div class="phase-card inpatient">
+    <div class="phase-header">
+      <div class="phase-icon inpatient">🛏️</div>
+      <div>
+        <div class="phase-name">Phase ④⑤ 입원 전 준비 + 입원 중</div>
+        <div class="phase-eng">PRE_ADMISSION + INPATIENT &mdash; 가장 중요한 단계</div>
+        <div class="phase-situation">입원 결정 ~ 퇴원 전까지. 매일 회진, 투약, 검사, 식사가 반복되는 일상.</div>
+      </div>
+    </div>
+    <div class="phase-grid">
+      <div class="info-box mind">
+        <h4>환자 심리</h4>
+        <ul>
+          <li>오늘 무슨 검사가 있지? 회진은 언제?</li>
+          <li>지금 맞고 있는 약이 뭐지?</li>
+          <li>점심 메뉴가 뭐지? 바꿀 수 있나?</li>
+          <li>의사 선생님이 뭐라고 하셨지?</li>
+          <li>입원비가 지금까지 얼마나 나왔지?</li>
+        </ul>
+      </div>
+      <div class="info-box screen">
+        <h4>포털 화면</h4>
+        <ul>
+          <li>입원 현황 Hero (병동/호실/주치의/바이탈)</li>
+          <li>오늘 일정 타임라인 (시간대별)</li>
+          <li>투약 현황 MAR (투여 완료/예정)</li>
+          <li>식단 카드 + 변경 요청</li>
+          <li>회진 기록 요약</li>
+          <li>중간 정산 현황</li>
+          <li>간호사 호출 버튼</li>
+        </ul>
+      </div>
+    </div>
+    <div class="scenario-box">
+      <div class="label">시나리오 &mdash; 입원 3일차 하루</div>
+      <p>
+        <strong>07:00</strong> 포털에 "오늘 일정" 갱신 &mdash; 08:00 투약, 09:00 혈액검사, 10:30 회진, 14:00 물리치료<br>
+        <strong>08:10</strong> 투약 카드 "메트포르민 500mg 투여 완료" 표시<br>
+        <strong>10:45</strong> 회진 기록 등장 &mdash; "혈당 안정. 내일 재검사 후 퇴원 여부 결정"<br>
+        <strong>12:00</strong> 식단 카드 "점심 &mdash; 밥 + 된장찌개 (당뇨식)" → 변경 요청 가능<br>
+        <strong>15:00</strong> 검사 결과 "혈당 108 (정상)" 카드 도착<br>
+        <strong>17:00</strong> 보호자에게 "오늘 상태 공유" 링크 전송
+      </p>
+    </div>
+  </div>
+
+  <!-- Phase 6: PRE_DISCHARGE -->
+  <div class="phase-card pre-discharge">
+    <div class="phase-header">
+      <div class="phase-icon pre-discharge">🎉</div>
+      <div>
+        <div class="phase-name">Phase ⑥ 퇴원 준비</div>
+        <div class="phase-eng">PRE_DISCHARGE &mdash; 퇴원 요약서 서명 후</div>
+        <div class="phase-situation">퇴원 결정 후 퇴원 당일까지. 퇴원약, 주의사항, 다음 예약에 집중.</div>
+      </div>
+    </div>
+    <div class="phase-grid">
+      <div class="info-box mind">
+        <h4>환자 심리</h4>
+        <ul>
+          <li>퇴원하면 약은 뭘 먹어야 하지?</li>
+          <li>집에서 주의할 점이 뭐지?</li>
+          <li>다음에 언제 병원에 와야 하지?</li>
+          <li>보험 청구는 어떻게?</li>
+        </ul>
+      </div>
+      <div class="info-box screen">
+        <h4>포털 화면</h4>
+        <ul>
+          <li>퇴원 체크리스트 (약 수령→예약→수납→서류)</li>
+          <li>퇴원 약 목록 + 신규 약 강조 + 복용법</li>
+          <li>퇴원 후 주의사항 (식이/운동/응급 증상)</li>
+          <li>다음 외래 예약 안내</li>
+          <li>만족도 조사</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 7-8: POST_DISCHARGE -->
+  <div class="phase-card post-discharge">
+    <div class="phase-header">
+      <div class="phase-icon post-discharge">💜</div>
+      <div>
+        <div class="phase-name">Phase ⑦⑧ 퇴원 후 사후 관리</div>
+        <div class="phase-eng">POST_DISCHARGE &mdash; D+1 ~ D+30</div>
+        <div class="phase-situation">자택 회복 중. 복약 순응, 추적 검사, 재입원 예방이 핵심.</div>
+      </div>
+    </div>
+    <div class="phase-grid">
+      <div class="info-box mind">
+        <h4>환자 심리</h4>
+        <ul>
+          <li>이 증상은 정상인 건가?</li>
+          <li>약을 제대로 먹고 있는지 확인하고 싶다</li>
+          <li>추적 검사 날짜가 언제였지?</li>
+        </ul>
+      </div>
+      <div class="info-box screen">
+        <h4>포털 화면</h4>
+        <ul>
+          <li>퇴원 후 D+N 배너</li>
+          <li>복용 체크 + 주간 복용률</li>
+          <li>회복 추적 그래프 (입원 시 ↔ 현재)</li>
+          <li>추적 관찰 캘린더</li>
+          <li>응급 증상 안내 + 주치의 메시지</li>
+          <li>퇴원 서류 다운로드</li>
+        </ul>
+      </div>
+    </div>
+    <div class="scenario-box">
+      <div class="label">자동 알림 타임라인</div>
+      <p>
+        <strong>D+1</strong> "퇴원 약 복용 시작하셨나요?" + 복용법 안내<br>
+        <strong>D+3</strong> 복용률 70% 미만 시 리마인더<br>
+        <strong>D+7</strong> 회복 상태 확인 + 자가 기록 독려<br>
+        <strong>D+14</strong> 추적 검사 리마인더<br>
+        <strong>D+30</strong> 사후 관리 종료 → IDLE 복귀 (만성질환은 지속)
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ 화면 미리보기 ══════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">3. Phase별 화면 미리보기</h2>
+  <p class="section-desc">모바일 3탭(홈 / 내 건강 / 더보기) 구조에서 홈 탭의 카드 구성이 Phase에 따라 자동으로 바뀝니다.</p>
+
+  <div class="mockup-row">
+    <!-- IDLE -->
+    <div>
+      <div class="mockup-phone">
+        <div class="mockup-statusbar"></div>
+        <div class="mockup-content">
+          <div class="mock-card normal"><h5>AI 건강 점수 87점</h5><p>전반적으로 양호합니다</p></div>
+          <div class="mock-card normal"><h5>💊 복용 체크</h5><p>오늘 복용률 100% ✅</p></div>
+          <div class="mock-card normal"><h5>📊 혈당 추이</h5><p>98 → 105 → 112 mg/dL</p></div>
+          <div class="mock-card normal"><h5>🏥 다음 예약</h5><p>6/15 (월) 09:30 내과</p></div>
+        </div>
+        <div class="mock-nav">
+          <div class="mock-nav-item active">🏠 홈</div>
+          <div class="mock-nav-item">❤️ 내 건강</div>
+          <div class="mock-nav-item">≡ 더보기</div>
+        </div>
+      </div>
+      <div class="mockup-label">① IDLE (원외)</div>
+    </div>
+
+    <!-- INPATIENT -->
+    <div>
+      <div class="mockup-phone">
+        <div class="mockup-statusbar"></div>
+        <div class="mockup-content">
+          <div class="mock-card hero"><h5>입원 3일차 · 5병동 502호</h5><p>김내과 교수 (주치의)<br>BP 128/82 · HR 72 · SpO2 98%</p></div>
+          <div class="mock-card normal"><h5>📋 오늘 일정</h5><p>08:00 투약 ✅ · 10:30 회진 🔵 · 14:00 물리치료</p></div>
+          <div class="mock-card success"><h5>💊 오늘 투약</h5><p>메트포르민 ✅ · 아스피린 ○ 예정</p></div>
+          <div class="mock-card normal"><h5>📝 회진 기록</h5><p>"혈당 안정. 내일 재검사 후 퇴원 결정"</p></div>
+        </div>
+        <div class="mock-nav">
+          <div class="mock-nav-item active">🏠 홈</div>
+          <div class="mock-nav-item">❤️ 내 건강</div>
+          <div class="mock-nav-item">≡ 더보기</div>
+        </div>
+      </div>
+      <div class="mockup-label">⑤ INPATIENT (입원 중)</div>
+    </div>
+
+    <!-- PRE_DISCHARGE -->
+    <div>
+      <div class="mockup-phone">
+        <div class="mockup-statusbar"></div>
+        <div class="mockup-content">
+          <div class="mock-card" style="background: linear-gradient(135deg, #059669, #0d9488); color: white; border-radius: 12px; padding: 12px; margin-bottom: 10px;"><h5>퇴원 준비</h5><p>퇴원 예정일: 6/7 (토)<br>퇴원 진단: 제2형 당뇨병 (안정)</p></div>
+          <div class="mock-card normal"><h5>📋 퇴원 체크리스트</h5><p>✅ 처방확인 · ☐ 약수령 · ☐ 예약 · ☐ 수납</p></div>
+          <div class="mock-card success"><h5>💊 퇴원 약</h5><p>메트포르민 · 아스피린 · 리피토 (신규!)</p></div>
+          <div class="mock-card alert"><h5>⚠️ 퇴원 후 주의사항</h5><p>저당식이 · 하루 30분 걷기 · 1주 무거운 물건 금지</p></div>
+        </div>
+        <div class="mock-nav">
+          <div class="mock-nav-item active">🏠 홈</div>
+          <div class="mock-nav-item">❤️ 내 건강</div>
+          <div class="mock-nav-item">≡ 더보기</div>
+        </div>
+      </div>
+      <div class="mockup-label">⑥ PRE_DISCHARGE (퇴원 준비)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ 전환 트리거 ══════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">4. HIS → 포털 상태 전환 트리거</h2>
+  <p class="section-desc">HIS에서 이벤트가 발생하면 포털 화면이 자동으로 전환됩니다. 환자는 전환을 의식하지 않습니다.</p>
+
+  <table class="transition-table">
+    <thead>
+      <tr>
+        <th>HIS 이벤트</th>
+        <th>트리거</th>
+        <th>포털 전환</th>
+        <th>환자에게 보이는 변화</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>예약 D-7</td>
+        <td><span class="tag auto">자동</span></td>
+        <td>IDLE → <strong>PRE_VISIT</strong></td>
+        <td>방문 준비 체크리스트 + D-day 카운트</td>
+      </tr>
+      <tr>
+        <td>접수(Reception) 생성</td>
+        <td><span class="tag his">HIS</span></td>
+        <td>PRE_VISIT → <strong>OUTPATIENT</strong></td>
+        <td>진료 여정 타임라인 + 대기 번호</td>
+      </tr>
+      <tr>
+        <td>입원 확정</td>
+        <td><span class="tag his">HIS</span></td>
+        <td>→ <strong>INPATIENT</strong></td>
+        <td>입원 현황 Hero + 오늘 일정 + 투약</td>
+      </tr>
+      <tr>
+        <td>회진 기록 등록</td>
+        <td><span class="tag his">HIS</span></td>
+        <td>INPATIENT (갱신)</td>
+        <td>"회진 기록이 등록되었습니다" 카드 등장</td>
+      </tr>
+      <tr>
+        <td>퇴원 요약서 서명</td>
+        <td><span class="tag his">HIS</span></td>
+        <td>INPATIENT → <strong>PRE_DISCHARGE</strong></td>
+        <td>퇴원 체크리스트 + 퇴원약 + 주의사항</td>
+      </tr>
+      <tr>
+        <td>퇴원 확정</td>
+        <td><span class="tag his">HIS</span></td>
+        <td>→ <strong>POST_DISCHARGE</strong></td>
+        <td>퇴원 D+N 배너 + 복약 관리 + 추적 일정</td>
+      </tr>
+      <tr>
+        <td>30일 경과</td>
+        <td><span class="tag auto">자동</span></td>
+        <td>POST_DISCHARGE → <strong>IDLE</strong></td>
+        <td>건강 점수 + 복용 체크 (일상 복귀)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════ 탭 동작 매트릭스 ══════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">5. Phase별 3탭 동작</h2>
+  <p class="section-desc">3탭(홈/내건강/더보기) 구조는 동일하지만, 홈 탭의 카드 구성이 Phase에 따라 바뀝니다.</p>
+
+  <table class="tab-matrix">
+    <thead>
+      <tr><th>Phase</th><th>홈 탭</th><th>내 건강 탭</th><th>더보기 탭</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>IDLE</td><td>건강 점수, 복용 체크, 자가 기록</td><td>검사 추이, 복용약, 예방접종</td><td>동일</td></tr>
+      <tr><td>PRE_VISIT</td><td class="highlight">준비 체크리스트, 금식 안내</td><td>동일</td><td>동일</td></tr>
+      <tr><td>OUTPATIENT</td><td class="highlight">진료 여정, 대기 번호, To-Do</td><td>동일</td><td>동일</td></tr>
+      <tr><td>INPATIENT</td><td class="highlight">입원 현황, 일정, 투약, 식단, 회진</td><td class="highlight">+ 바이탈 추이</td><td class="highlight">+ 간호사 호출</td></tr>
+      <tr><td>PRE_DISCHARGE</td><td class="highlight">퇴원 체크리스트, 퇴원약, 주의사항</td><td>동일</td><td class="highlight">+ 퇴원 서류</td></tr>
+      <tr><td>POST_DISCHARGE</td><td class="highlight">복용 체크, 회복 추적, 응급 안내</td><td class="highlight">+ 회복 비교</td><td class="highlight">+ 보험 청구</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════ 전환 UX 원칙 ══════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">6. 전환 UX 5원칙</h2>
+  <div class="phase-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+    <div class="info-box">
+      <h4>자동 전환</h4>
+      <p style="font-size: 0.85rem; color: #374151;">HIS 이벤트 발생 시 포털 홈이 자동 갱신. 환자가 새로고침할 필요 없음.</p>
+    </div>
+    <div class="info-box">
+      <h4>소프트 알림</h4>
+      <p style="font-size: 0.85rem; color: #374151;">카드 애니메이션(fadeInUp) + 토스트 메시지로 부드럽게 안내.</p>
+    </div>
+    <div class="info-box">
+      <h4>이전 정보 보존</h4>
+      <p style="font-size: 0.85rem; color: #374151;">입원 중에도 "내 건강" 탭에서 외래 검사 결과 조회 가능.</p>
+    </div>
+    <div class="info-box">
+      <h4>점진적 공개</h4>
+      <p style="font-size: 0.85rem; color: #374151;">필요한 정보만 우선 표시. 탭하면 상세 확장.</p>
+    </div>
+    <div class="info-box">
+      <h4>이중 안전장치</h4>
+      <p style="font-size: 0.85rem; color: #374151;">자동 전환 + 1분 폴링 + 풀다운 새로고침 지원.</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<div class="footer">
+  <p>Hospital RUN &mdash; 환자 포털 생애주기 시스템 v1.1 &mdash; 2026-06-04</p>
+  <p style="margin-top:4px;"><a href="https://his.example.org/portal">his.example.org/portal</a></p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,469 @@
+# LoopSpec L0 역기술 파일럿 — `interpret-lab`(검사해석)
+#
+# 목적: **이미 배포돼 돌고 있는 스킬 하나**를 LoopSpec v1 어휘로 되받아 적어, 스키마가 우리 실물을
+#       담을 수 있는지 판정한다. 정본 계획서 = `loop-platform-adoption.plan.md` §4-L0.
+# 작성 2026-08-20 · 스키마 원본은 저장소 밖(`~/Downloads/loopspec.schema.json`) — 복사하지 않는다(§0 규약).
+#
+# 🔴 작성 규칙(어겼는지 검증 가능하게 못박는다)
+#   1. **실물 코드에서 읽은 값만 적는다.** 근거를 `# 근거:` 로 파일:줄 로 남긴다.
+#   2. **모르는 값·하드락(§6.2) 필드는 비운다.** 비운 자리를 그럴듯한 값으로 채우면 파일럿이 무의미해진다.
+#      → 그래서 이 파일은 **스키마 검증에 의도적으로 실패한다.** 실패 목록이 곧 "실물이 못 채우는 필수 필드"다.
+#      (검증: `node scripts/loopspec-validate.mjs` — run A = 이 파일 그대로, run B = 자리표시 오버레이)
+#   3. **표현 손실은 지우지 않고 `# 🔴 표현 손실:` 로 남긴다.** 주석은 스키마가 읽지 않으므로,
+#      컴파일러가 이 파일만 보고 산출물을 만들면 그 손실은 **그대로 실물보다 덜 안전한 산출물**이 된다(§4-L0 역방향 손실).
+#   4. `metadata.labels`(자유 문자열 맵)에 담지 않는다 — 담으면 스키마가 못 담는다는 사실이 감춰진다.
+
+apiVersion: loop.hospital/v1
+kind: Loop
+
+metadata:
+  # 근거: 스킬 키 `interpretLab`(apps/api/src/common/ai-skill-quality.ts:26) ·
+  #       감사 resourceType `AiInterpretLab`/`AiInterpretLabOutcome`(medical-ai.controller.ts:415-418)
+  # ⚠️ 실물에는 "루프 ID"라는 개념이 없다. 위 두 식별자에서 유도한 이름이며 실물 상수가 아니다.
+  id: lab.interpret-lab
+  name: 검사해석 # 근거: AI_QUALITY_SKILLS label(ai-skill-quality.ts:34) · FE 탭 라벨(ai-skill-modes.ts:32)
+  description: >-
+    전달된 검사 결과(값·단위·기준치·LIS flag)를 환자 맥락(연령·성별·활성 문제목록·활성 처방·직전 30일 확정검사)과
+    함께 LLM 에 보내 한국어 해석을 받고, 결정론 검증 6규칙을 통과한 것만 `source: AI` 로 낸다.
+    통과하지 못하면 본문을 지우지 않고 `source: FALLBACK` + 사유 코드로 표시한다.
+    LLM 이 응답하지 못하면 LIS flag·기준치만 쓰는 규칙 기반 해석으로 접고 그렇게 말한다.
+
+  # ── 비워 둔 필수 필드 (여기가 이 파일럿의 산출물이다) ────────────────────────────────
+  # version: (required) ⚠️ 실물에 대응물 **없음**. 이 스킬에는 버전이 없다 — 프롬프트도 검증규칙도
+  #          코드와 함께 배포되고, 감사행에도 `prompt_version`/`model_id` 가 남지 않는다.
+  #          (실측: medical-ai.controller.ts:232-235 `outcomeMeta` = source·reason·latencyMs·verifyFailed 4키뿐)
+  #          🔴 그리고 스키마 `^\d{4}\.\d{2}\.\d+$` 는 patch/minor/major 를 구분하지 못한다(계획서 §2 A5).
+  #
+  # owners: (required) ⚠️ 실물에 **없음**. 이 저장소에 CODEOWNERS 파일이 없고(실측: `ls CODEOWNERS
+  #         .github/CODEOWNERS` → 둘 다 부재), 검사해석의 임상 오너가 지정된 곳이 없다.
+  #         가장 가까운 실물은 `ai-verify.ts:82` 주석 "최소 사전 — 위원회가 관리한다"(**계획**이지 배선이 아님).
+  #
+  # approvals: ⚠️ 이 스킬에 대한 위원회 승인 이력이 **없다**. optional 이라 비워도 스키마는 통과한다
+  #            → 🔴 lifecycle: general 인데 승인 0건인 상태가 **스키마 검증만으로는 잡히지 않는다**(L12 는 컴파일러 lint).
+
+  lifecycle: general
+  # 근거: `POST /api/v1/ai/interpret-lab` 이 전 진료과 DOCTOR·NURSE 에게 열려 있고(controller:412),
+  #       부서·병동 제한이 코드 어디에도 없다. shadow/limited 단계를 거친 적이 없다.
+  # 🔴 표현 손실: 실물의 "켜짐" 상태는 단일 값이 아니라 **런타임 config 3개의 곱**이다 —
+  #    `ai.server.enabled`(기본 ON·false 면 503) × `ai.skill.quality.action.interpretLab`(기본 OFF)
+  #    × `ai.brief.llm.enabled`(기본 OFF, 야간 배치만). lifecycle enum 은 이 곱을 표현하지 못한다.
+
+  authoring:
+    generated_by: llm_draft
+    generator_version: claude-opus-5-1m/loopspec-l0-pilot-2026.08.20
+    source_request: >-
+      LoopSpec L0 역기술 파일럿 — 이미 배포된 interpret-lab 스킬을 LoopSpec 으로 되받아 적고
+      표현 불가 목록을 산출하라(loop-platform-adoption.plan.md §4).
+    # reviewed_by / reviewed_at: 미검토 → L22 ERROR 대상(설계서 §6.3). 의도적으로 비운다.
+    # 🔴 표현 손실(계획서 §2 A6): `generated_by` 는 **문서 단위**다. 이 파일에서 어떤 필드가
+    #    실물 근거로 채워졌고 어떤 필드가 LLM 판단인지 필드 단위로 구분할 자리가 없어,
+    #    위 `# 근거:` 주석이 그 역할을 대신하고 있다 — **주석은 컴파일러가 읽지 않는다.**
+
+spec:
+  audience:
+    subject: clinician
+    roles:
+      # 근거: `@Roles(UserRole.DOCTOR, UserRole.NURSE)`(medical-ai.controller.ts:412)
+      # 🔴 표현 손실 A — 역할 어휘가 맞지 않는다. 우리 RBAC 14역할 중 `DOCTOR` 하나가
+      #    ATTENDING·RESIDENT·PA 를 전부 덮는다. 아래 매핑은 **실물보다 세분화된 척**한다(허위 정밀도).
+      - ATTENDING
+      - RESIDENT
+      - WARD_NURSE
+      - CHARGE_NURSE
+      # 🔴 표현 손실 B — 두 번째 진입 경로 `GET /api/v1/lab/orders/:orderId/ai-interpret`
+      #    (lab.controller.ts:384-388)는 클래스 @Roles(lab.controller.ts:36) 을 상속해
+      #    **LAB_TECH·ADMIN 까지** 같은 스킬을 부른다. `roles` 는 루프 전체에 하나뿐이라
+      #    "트리거마다 다른 역할"을 적을 수 없고, `ADMIN` 에 대응하는 enum 값도 없다.
+    # scope: 생략 — 부서·병동·진료유형 제한이 실물에 없다.
+    # 🔴 표현 손실: "제한 없음"을 **주장**으로 적을 자리가 없다(`resources: []` 는 주장으로 인정하면서
+    #    scope/eligibility 부재는 누락과 구분되지 않는다 — 계획서 §3 B8).
+
+  lane: sync
+  # 근거: 사용자가 버튼을 누르고 기다린다(AiAssistantPanel.tsx:573-611 `handleInterpretLab`).
+  #       LLM 호출 타임아웃 120초(medical-ai.service.ts:92 `llmTimeoutMs`).
+  # 🔴 표현 손실: 같은 함수가 **야간 배치(async)** 로도 실행된다
+  #    (patient-brief.service.ts:214 `withBudget(this.labInterpreter(...), budgetSec*1000)`).
+  #    `lane` 은 루프당 하나라 두 레인을 동시에 적을 수 없다.
+
+  risk:
+    # tier: (required) — 🔴 **하드락(설계서 §6.2)이라 LLM 은 비워야 하는데 스키마는 required 다.**
+    #   두 규칙이 양립하지 않는다 → LLM 초안은 원리적으로 스키마 검증을 통과할 수 없다.
+    #   실물 근거만 적자면: 이 스킬은 `severity`(CRITICAL/HIGH/MODERATE/NORMAL)와
+    #   `clinicalImplication`·`suggestedActions` 를 LLM 이 만든다(medical-ai.service.ts:1278)
+    #   → tier 1(정리·전달)이 아니라 **tier 2(임상적 판단)** 로 읽히지만, 그 판정은 위원회 몫이다.
+    ai_disclosure:
+      required: true
+      # 근거: `withDisclaimer`(medical-ai.service.ts:276-283)가 응답에 `disclaimer` 를 붙이고,
+      #       FE 는 `AiOriginLabel`/`AI_ORIGIN_TEXT`("AI(WeRU.B)")를 함께 낸다
+      #       (AiAssistantPanel.tsx:248 · packages/shared/src/ai-brand.ts:17).
+      # 🔴 표현 손실: 실제 문구는 런타임 config `ai.disclaimer`(기본 shared `AI_DEFAULT_DISCLAIMER`)에서
+      #    온다. `text` 는 리터럴 문자열만 받으므로 **여기에 적으면 정본이 둘이 된다** — 그래서 비운다.
+      #    "문구는 config 키 X 가 정본"이라고 선언할 `text_ref` 슬롯이 없다.
+    # samd_assessment: 🔴 하드락(§6.2) — 비운다. 실물 상태는 "판단한 적 없음"이고,
+    #   그 사실을 담을 곳은 이 블록뿐인데 `status: NOT_ASSESSED` 를 LLM 이 적는 것 자체가 하드락 침범이다.
+    # privacy: 블록째 생략한다(아래 두 필드 모두 정직하게 적을 값이 없다).
+      # sensitive_categories: 🔴 적을 수 없다. 실물에는 민감범주 **필터가 없다** —
+      #   `recentLabs` 는 검사 종류를 가리지 않고 최근 30일 전량을 담는다
+      #   (patient-brief.service.ts:117-121). 빈 배열은 "해당 범주가 없다"는 **다른 사실**이고,
+      #   "분류하지 않았다"를 말할 값이 enum 에 없다.
+      # external_model_transfer: 🔴 비운다 — 폐쇄망 vs 위탁 결정이 미결(계획서 §6-2)이고,
+      #   실물 상태는 enum 셋 중 어느 것도 아니다:
+      #     · FORBIDDEN 아님 — 임상 텍스트가 실제로 나간다(ai-egress-fetch.ts:111 `fetch`)
+      #     · TOKENIZED_ONLY 아님 — 이 경로에 토큰화가 없다(아래 context.redaction 참조)
+      #     · ALLOWED_IN_REGION 아님 — 리전이 확인된 적 없고, `AI_EGRESS_ALLOWED_HOSTS` 미설정이면
+      #       호스트 제한 자체가 걸리지 않는다(ai-egress-url.ts:18-19,45-54).
+      #   🔴 그리고 이 필드에는 `"default": "TOKENIZED_ONLY"` 가 붙어 있다 —
+      #      JSON Schema 의 default 는 값을 주입하지 않으므로(계획서 §2 A1), **비워 두면 아무 정책도 없는데
+      #      문서만 "토큰화만 허용"이라고 읽히는** 상태가 된다. 이것이 A1 이 실제로 무는 자리다.
+
+  triggers:
+    # 🔴 이 블록이 파일럿에서 가장 크게 걸린 자리다.
+    #
+    # 실물 진입 경로는 셋인데, LoopSpec 어휘로 적을 수 있는 것은 **셋 중 하나뿐**이고
+    # 하필 그 하나가 **기본 OFF** 인 경로다.
+    #
+    #  (1) 사람이 버튼을 누른다 — `handleInterpretLab`(AiAssistantPanel.tsx:573) → POST /api/v1/ai/interpret-lab
+    #      🔴 `Trigger.hook` enum(patient-view/note-open/note-sign/order-select/order-sign/
+    #         encounter-discharge/shift-handoff/worklist-render/global-query)에 **"사용자가 이 버튼을 눌렀다"가 없다.**
+    #         `note-open` 은 거짓이다 — 패널은 기본 접힘이고(AiAssistantPanel.tsx:339) LLM 은 펼친 뒤
+    #         버튼을 눌러야만 불린다. `inbound/EMR_QUERY_BOX` 도 질의창이지 이 버튼이 아니다.
+    #         → 적을 수 없어 **생략**했다. 스키마는 이 생략을 잡지 못한다(minItems: 1 을 아래 (2)가 채운다).
+    #
+    #  (2) 야간 배치 B — 아래 schedule 로 적었다. 단 `ai.brief.batch.enabled`·`ai.brief.llm.enabled`
+    #      **둘 다 기본 OFF**(patient-brief.service.ts:194-199) → 표현 가능한 유일한 트리거가 꺼져 있는 경로다.
+    #
+    #  (3) `GET /api/v1/lab/orders/:orderId/ai-interpret`(lab.controller.ts:384) —
+    #      호출하는 화면이 없다(실측: `grep -rn "ai-interpret" apps/web/src apps/mobile` → 0건).
+    #      HTTP GET 진입점이라 hook/event/schedule/timer/inbound 어디에도 해당하지 않는다.
+    - type: schedule
+      cron: 0 2 * * *
+      # 근거: `@Cron('0 2 * * *')`(patient-brief.service.ts:192)
+      timezone: Asia/Seoul
+      # ⚠️ 확인 못 한 것: 컨테이너 OS 는 UTC 이고 KST 는 pm2 TZ 설정에서만 온다(운영 함정 기록).
+      #    코드에 timezone 인자가 없으므로 이 값은 **프로세스 TZ 에 의존**한다 — 스키마에는 그 의존을 적을 자리가 없다.
+
+  eligibility:
+    include:
+      - id: BATCH_TARGET_TOMORROW_OR_ADMITTED
+        expr: 'appointment.scheduledAt in [tomorrow 00:00, +1d) and status in (SCHEDULED, CONFIRMED) or admission.status = ADMITTED'
+        note: >-
+          근거 patient-brief.service.ts:239-247 `batchTargets`. 🔴 `expr` 은 "FHIRPath 또는 등록된 룰 ID,
+          자유 텍스트 금지"인데 우리에겐 Rule Catalog 가 없다 — 이 문자열은 **미등재 참조**이고 L11 ERROR 대상이다.
+          즉 이 블록은 지금 상태로는 컴파일될 수 없다(카탈로그 부트스트랩 선행 · 계획서 §4 L2).
+      - id: HAS_LABS_TO_INTERPRET
+        expr: brief.recentLabs.length > 0
+        note: >-
+          근거 patient-brief.service.ts:211 — 해석할 검사가 0건이면 LLM 을 부르지 않는다(근거 게이트).
+          FE 쪽에도 같은 게이트가 따로 있다(AiAssistantPanel.tsx:583 `if (!recent?.items?.length)`) ·
+          BE 쪽 lab 경로에도 또 있다(lab.service.ts:93-100 `aiUnavailable('NO_SOURCE_DATA')`).
+          🔴 같은 규칙이 세 곳에 따로 구현돼 있는데 `eligibility` 는 하나뿐이라 그 사실이 사라진다.
+    # exclude: 없음 — 실물에 제외 조건이 없다.
+    # consent: 🔴 **적을 값이 없다.** 이 경로에는 환자 동의 확인이 한 군데도 없다
+    #   (실측: `grep -rn "aiConsent\|AI_CONSENT\|ai.consent" apps/api/src/modules/medical-ai/` → 0건).
+    #   `on_missing` enum(skip_silently/request_consent/fallback_loop)에는 "동의 개념 자체가 미구축"이 없다.
+    #   빈 객체로 두면 "동의 요건 없음"으로 읽혀 실물보다 **안전하게** 들린다 → 그래서 블록째 생략한다.
+
+  context:
+    auth:
+      # 🔴 표현 손실(가장 위험한 자리) — enum 두 값 중 **어느 것도 사실이 아니다.**
+      #   · `on_behalf_of` 아님: 사용자 토큰 교환이 없다. 컨트롤러가 역할만 확인하고
+      #     (medical-ai.controller.ts:412 `@Roles`), 서비스는 **서버 자격으로** Prisma 를 직접 읽는다
+      #     (medical-ai.service.ts:1236-1242). 사용자 권한 ∩ 루프 스코프 교집합이 걸리지 않는다.
+      #   · `service_account_minimal` 아님: 사용자 세션이 존재하고, 계정도 최소 스코프가 아니다(앱 DB 전체 권한).
+      #   여기에 `on_behalf_of` 를 적으면 컴파일러는 **있지도 않은 권한 교집합을 있다고 믿는 산출물**을 만든다.
+      #   → 정직하게 적을 값이 없으므로 required 필드 `mode` 를 비운다(= 검증 실패로 드러낸다).
+      patient_binding: session_bound
+      # 근거: 환자 ID 는 요청 본문 `dto.patientId` 로 온다(medical-ai.controller.ts:415) — 모델이 정하지 않는다.
+      # ⚠️ 다만 스키마 설명("session_bound 면 모델이 환자 ID 를 결정할 수 없다")과 달리 실물은
+      #    **세션에 묶인 것이 아니라 요청 본문이 정한다.** DTO 검증도 `@IsString()` 뿐이다
+      #    (dto/medical-ai.dto.ts:259-262 — UUID 검사조차 없다). 임상직의 전-환자 열람은 이 저장소에서
+      #    설계상 IDOR 이 아니지만, `session_bound` 라는 표기는 실제보다 강한 결속을 주장한다.
+
+    resources:
+      - ref: prisma.patient.findUnique.demographics
+        purpose: 연령·성별을 프롬프트에 넣고, 출력에 성별·연령 부적합 진단어가 섞였는지 검증(SEX_AGE 규칙)한다
+        fields: [dateOfBirth, gender, familyName, givenName]
+        # 근거: medical-ai.service.ts:1236-1240
+        # 🔴 표현 손실: `familyName`·`givenName` 은 **조회만 하고 어디에도 쓰이지 않는다**(프롬프트·검증·응답 모두 미사용).
+        #    `purpose` 는 리소스 단위라 "이 두 필드는 목적이 없다"를 적을 자리가 없고,
+        #    최소수집 근거표는 이 과다조회를 정당한 것으로 출력하게 된다(L10 은 통과한다).
+      - ref: brief.activeProblems
+        purpose: '검사값을 환자의 활성 문제와 연결해 해석하기 위해(예: 신질환 ↔ 크레아티닌)'
+        limit: 30
+        # 근거: patient-brief.service.ts:116(take 30) → medical-ai.service.ts:1268 `promptList(ctx.activeProblems)`
+      - ref: brief.activeMedications
+        purpose: '약물이 검사값에 미치는 영향을 해석에 반영하기 위해(예: 이뇨제 ↔ 전해질)'
+        limit: 50
+        # 근거: patient-brief.service.ts:115(take 50) → medical-ai.service.ts:1270
+      - ref: brief.recentLabs
+        purpose: 이번 검사값을 직전 확정 검사와 비교해 추이로 해석하기 위해
+        lookback: P30D
+        limit: 10
+        # 근거: patient-brief.service.ts:117-121(status COMPLETED|VERIFIED · completedAt ≥ P30D · take 10)
+        # 🔴 표현 손실: 실물엔 상한이 **둘**이다 — 조회 10건(검사지 단위) 뒤 항목별 최신값으로 접고
+        #    다시 20항목으로 자른다(medical-ai.service.ts:943). `limit` 은 하나뿐이라 어느 쪽도 정확하지 않다.
+      - ref: brief.allergy
+        purpose: (이 루프에서는 사용하지 않는다 — 브리핑을 통째로 받으면서 함께 조회된다)
+        # 🔴 표현 손실 + 실측: `skillContext` 는 `allergyLine` 을 만들지만(medical-ai.service.ts:940)
+        #    검사해석 프롬프트는 그것을 **넣지 않는다**(medical-ai.service.ts:1268-1278 에 알레르기 줄 없음).
+        #    조회는 되고 목적은 없다. 위 `purpose` 는 10자 이상이라 **L10 을 통과한다** —
+        #    즉 L10 은 "목적이 적혀 있는가"만 보지 "목적이 참인가"는 보지 못한다.
+
+    # 🔴 표현 불가 — 이 루프의 **주 입력이 리소스 조회가 아니다.**
+    #    해석 대상 검사 결과는 요청 본문 `results[]` 로 들어온다(dto/medical-ai.dto.ts:264-266).
+    #    `context.resources` 는 서버측 조회만 담는 화이트리스트라, 호출자가 실어 보내는 임상 데이터를
+    #    선언할 자리가 없다. 그런데 실물에서 **틀리면 가장 위험한 것이 바로 이 입력**이다 —
+    #    과거에 `results: [{ testName: <주호소>, value: 'pending' }]` 로 존재하지 않는 검사를 해석시킨
+    #    사고가 있었다(ai-grounding.ts:6-8). 그 방어는 `eligibility` 도 `resources` 도 아닌
+    #    호출부의 근거 게이트로만 서 있고, LoopSpec 은 그것을 표현하지 못한다.
+
+    precompute:
+      # enabled: 🔴 boolean 으로 적을 수 없다. 실물의 스위치는 **런타임 config 두 개**이고 둘 다 기본 OFF다:
+      #   `ai.brief.batch.enabled`(배치 A·결정론)와 `ai.brief.llm.enabled`(배치 B·LLM 사전해석)
+      #   (patient-brief.service.ts:194-199). true/false 어느 쪽을 적어도 배포 상태와 어긋난다.
+      warm_on: []
+      # 근거: 예열은 이벤트가 아니라 크론이 한다(위 triggers 참조) — "이벤트 예열 없음"을 빈 배열로 주장한다.
+      ttl: P1D
+      # 근거: 브리핑 TTL 24h(patient-brief.service.ts:68 `TTL_SEC = 24*3600`)
+      # 🔴 표현 손실: 캐시가 **둘**이다. 위 브리핑(P1D) 말고 실시간 응답 캐시가 따로 있다 —
+      #    `ai:skill:interpretLab:<sha256(patientId+입력)>` TTL 600초, **`source:'AI'` 인 응답만** 저장
+      #    (medical-ai.service.ts:974,985-1003). `ttl` 슬롯이 하나뿐이라 두 번째 캐시는 사라지고,
+      #    "실패·폴백은 캐시하지 않는다"라는 안전 규약도 적을 자리가 없다.
+      invalidate_on:
+        - lab.result.completed
+        - lab.result.verified
+        - dispensing.completed
+        - admission.created
+        - encounter.signed
+        - vitals.recorded
+      # 근거: patient-brief.service.ts:177-182 `@OnEvent` 6종
+      # 🔴 표현 손실: 이 무효화는 **브리핑 캐시에만** 걸린다. 실시간 응답 캐시(600초)는 이 이벤트로 지워지지 않는다
+      #    (입력 해시 키라 검사값이 바뀌면 키가 달라지는 방식). 하나의 `invalidate_on` 이 두 캐시를 덮는 것처럼 읽힌다.
+
+    redaction:
+      tokenize: []
+      # 근거: 이 경로에 토큰화·마스킹이 **없다**. `redactIdentifiers` 는 이 파일에서 단 한 곳
+      #       (`sanitizeClinicalInfo` · medical-ai.service.ts:2283-2287, 영상 판독 `clinical_info` 전용)에서만
+      #       쓰이고 `interpretLabRun` 은 부르지 않는다(실측: 파일 내 호출 1회).
+      # 🔴 표현 손실 + 실측 위험: `clinicalContext` 는 **의사가 타이핑한 자유 텍스트가 그대로** 프롬프트에 들어간다
+      #    (medical-ai.service.ts:1267 · FE 는 `soap.subjective` 를 그대로 보낸다 AiAssistantPanel.tsx:600).
+      #    `tokenize` 는 구조화 필드 6종(patient_name/rrn/phone/address/mrn/clinician_name) enum 이라
+      #    "자유 텍스트 필드가 무검사로 나간다"를 표현할 수 없다(계획서 §3 B10 과 같은 축).
+
+  reasoning:
+    # model_class: 🔴 적을 값이 없다. 실물은 **모델을 상류가 고른다** —
+    #   `chatLlm` 이 `quality_check: true` 로 보내면 AI 서버가 모델을 자동선택하고(medical-ai.service.ts:530-549),
+    #   그 서버가 그 필드를 모르면 코드가 `qwen2.5:14b` 로 고정 재시도한다(medical-ai.service.ts:557).
+    #   즉 "등급"이 아니라 "상류 위임 + 하드코딩 폴백"이고, 실제로 어느 모델이 답했는지는
+    #   debug 로그로만 남고 **감사에는 남지 않는다**(medical-ai.service.ts:543 debug).
+    #   enum(extractive_small/general_small/general_large/rules_only)에 "상류가 선택 — 알 수 없음"이 없다.
+    # prompt_template: 🔴 적을 값이 없다. 프롬프트는 **인라인 템플릿 리터럴**이다
+    #   (medical-ai.service.ts:1268-1278). 레지스트리도 버전도 없다.
+    #   설계서 §1 은 인라인 프롬프트를 금지하므로, 이 값은 **채택 시 신설해야 하는 것**이지 역기술 대상이 아니다.
+    max_steps: 1
+    # 근거: LLM 호출 1회. 재시도 없음(medical-ai.service.ts:1283-1312).
+    #   ⚠️ 같은 파일의 `autoSoap` 은 한국어 실패 시 1회 재시도가 있는데(1192-1196) 검사해석에는 없다.
+    require_anchor_per_sentence: false
+    # 근거: 앵커 개념이 없다. 대신 `groundedOn`(무엇만 봤는지)을 문장이 아니라 **응답 전체 단위**로 낸다
+    #       (medical-ai.service.ts:1243). 스키마에는 "문장 단위 앵커 대신 응답 단위 근거 목록"을 적을 자리가 없다.
+    # on_insufficient_evidence: 🔴 enum(omit_with_reason/handoff/return_empty)에 실물 동작이 **없다.**
+    #   실물은 3상태 봉투다(ai-verify.ts:13 `SkillSource`):
+    #     · UNAVAILABLE — 원자료가 없어 **부르지 않았다**(lab.service.ts:93-100)
+    #     · FALLBACK    — 불렀으나 실패/검증 탈락 → **결정론 규칙 결과를 내되 "AI 소견 아님"이라 말한다**
+    #                     (medical-ai.service.ts:1315-1348 · summary 에 "규칙 기반 · AI 소견 아님" 명시)
+    #     · AI          — 검증 통과
+    #   `omit_with_reason` 은 "빼고 사유를 말한다"라 **결과를 내는** 우리 폴백과 다르고,
+    #   `return_empty` 는 이 저장소가 명시적으로 금지한 동작이다("빈 배열은 성공이 아니다" — skill-contract-guard.spec.ts:35).
+    determinism:
+      threshold_evaluation: llm_assisted
+      # 근거: `severity`(CRITICAL/HIGH/MODERATE/NORMAL)를 **LLM 이 정한다**(medical-ai.service.ts:1278 JSON 스키마).
+      #       규칙 폴백 경로에서만 결정론이다(1317-1338).
+      # 🔴 이 값이 위험을 드러내지 못한다: L06(임계 판정을 LLM 에 위임 금지)은 `output.kind: alert` 에만 걸린다.
+      #    이 루프는 `card` 라 lint 를 통과하는데, 화면은 CRITICAL 을 빨강으로 그린다
+      #    (AiAssistantPanel.tsx:SEVERITY_COLOR) — 경보가 아닌 척하는 경보다.
+      llm_roles:
+        - summarization
+        - phrasing
+      # 🔴 표현 손실: 실물의 세 번째 역할은 **중증도 판정**인데 enum
+      #    (signal_extraction/phrasing/suppression_assist/summarization/query_understanding/drafting)에 없다.
+      #    `suggestedActions`("추가검사/조치")를 만드는 역할도 없다.
+
+  tools:
+    allow: []
+    # 근거: 이 스킬은 툴을 하나도 호출하지 않는다. `ToolRegistry`(orchestrator/tool-registry)는
+    #       `orchestrate()` 만 쓰고 `interpretLabRun` 은 부르지 않는다(medical-ai.service.ts:1230-1349).
+    # ⚠️ 계획서 §2 A4 대로 `allow: []` 가 "툴 없음"의 **주장**으로 읽히는지는 스키마 문언상 불명확하다
+    #    (`resources: []` 에만 그 규정이 있다). 여기서는 주장으로 적었다.
+
+  output:
+    kind: card
+    # 근거: 사이드 패널 카드로 렌더된다(AiAssistantPanel.tsx:1186-1192 `LabInterpretationBody`).
+    #       write-back 도 알림도 없다.
+    # schema_ref: 생략 — 출력 스키마 레지스트리가 없다. 실물의 출력 형태는 TypeScript 타입
+    #             (`LabInterpretationEnvelope` · patient-brief.service.ts:30-36)으로만 존재한다.
+    presentation:
+      surface: side_panel
+      intensity: passive
+      # actions: 🔴 **없다.** `suggestedActions`("추가검사/조치")는 실행 버튼 없이 텍스트로만 그려진다
+      #   (AiAssistantPanel.tsx:322-330). L17 WARN 대상이며, 그 경고는 정확하다.
+      #   ⚠️ 단 `actions[].tool_ref` 는 툴 참조만 받는다 — "이 문장은 사람이 읽고 판단할 것"이라는
+      #      의도적 무행위를 선언할 자리는 없다.
+      show_sources: true
+      # 근거: `groundedOn` 축 수를 툴팁과 함께 낸다(AiAssistantPanel.tsx:250).
+      show_coverage_note: true
+      # 근거: `groundedOn` 이 "무엇만 봤는지"를 나열하고(medical-ai.service.ts:1243),
+      #       모델 답변이 잘리면 "⚠️ 모델 답변이 잘려 완결된 항목만 표시"를 덧붙인다(1292).
+    write_back:
+      target: none
+      # 근거: 검사해석에는 적용 버튼이 없다. SOAP 초안에만 `onApplySoap` 이 있고
+      #       그것도 `source === 'AI'` 일 때만 활성이다(AiAssistantPanel.tsx:1667).
+    # 🔴 표현 손실(출력 계약 전체) — 실물 응답에는 스키마에 대응물이 없는 **봉투**가 붙는다:
+    #    `source`(AI/FALLBACK/UNAVAILABLE) · `reason`(사유 코드) · `verify.passed[]`/`verify.failed[]` ·
+    #    `latencyMs` · `groundedOn[]` · `cached`/`cachedAt`(ai-verify.ts:18-26).
+    #    화면은 이 봉투로 분기한다 — "AI 소견으로 쓸 수 없음"(FALLBACK) · "산출 불가"(UNAVAILABLE)
+    #    (AiAssistantPanel.tsx:241-266). LoopSpec 의 `output` 블록에는 **출처 3상태를 선언할 자리가 없다**.
+
+  verification:
+    rules:
+      # 근거: medical-ai.service.ts:1297-1304 이 호출 순서대로 넘기는 6검사. 이름은 코드가 내는 값 그대로.
+      - NON_EMPTY:findings
+      - LAB_DIRECTION
+      - ONLY_PROVIDED_TESTS
+      - SEX_AGE
+      - KOREAN
+      - MIXED_SCRIPT
+      # 🔴 표현 손실 A — **파라미터가 사라진다.** `KOREAN` 은 한글 비율 임계 0.3 을 갖고(ai-verify.ts:38),
+      #    다른 스킬의 `DRUGS_RESOLVABLE` 은 임계를 런타임 config 에서 읽는다(medical-ai.service.ts:1354-1357).
+      #    `rules: [string]` 에는 임계를 적을 자리가 없다 → 컴파일러가 만드는 파이프라인은 임계 없는 규칙이 된다.
+      # 🔴 표현 손실 B — **이건 출력 검증만이 아니다.** `LAB_DIRECTION` 과 `ONLY_PROVIDED_TESTS` 는
+      #    입력(labInputs)과 출력(findings)을 **대조**한다(ai-verify.ts:59-79). 스키마의 Verification 은
+      #    "출력 검증 레이어"이고, 입력 대조 슬롯은 `numeric_crosscheck`(boolean·수치 전용) 하나뿐이다.
+      #    "flag 방향 반전"과 "보내지 않은 검사 언급"은 수치 대조가 아니다 → boolean 으로 표현되지 않는다.
+      # 🔴 표현 손실 C — 실물은 **전 규칙을 다 평가하고 실패 집합 전체를 낸다**(ai-verify.ts:228-232).
+      #    스키마 설명(§3.8)은 "순서대로" 도는 체인이라 첫 실패에서 멈추는 것처럼 읽힌다.
+      #    실패 집합이 사라지면 화면의 "실패 규칙: A · B" 표시와 계측의 폐기 사유별 분모가 함께 무너진다.
+    numeric_crosscheck: false
+    # 근거: 검사해석 출력은 수치를 다시 싣지 않는다(findings 는 test/interpretation/severity).
+    citation_required: false
+    second_model:
+      enabled: false
+      # 근거: 2차 모델 검사가 없다.
+    # on_fail: 🔴 enum(regenerate_once_then_handoff/handoff/drop_silently/block)에 **실물 동작이 없다.**
+    #   실물: 본문을 **지우지 않고** `source: 'FALLBACK'` + `VERIFY_REJECTED:<첫 실패 규칙>` 으로 표시하고,
+    #   화면이 "AI(WeRU.B) 소견으로 쓸 수 없음 — 실패 규칙: …"과 함께 접어 보여주며 적용 버튼을 막는다
+    #   (ai-verify.ts:216-243 · AiAssistantPanel.tsx:258-266). 사람 큐로 넘기지(handoff) 않고,
+    #   재생성하지 않고, 막지(block) 않고, 조용히 버리지도(drop_silently) 않는다.
+    #   → 필요한 값은 `label_and_degrade`(표시하되 출처를 강등) 이고, 그것이 enum 에 없다.
+    #   🔴 그리고 `drop_silently` 는 이 저장소가 봉합해 온 결함 그 자체다(계획서 §3 B1).
+    human_sampling_rate: 0
+    # 근거: 사후 인적 검토 표본 큐가 없다. `FeedbackRow`(AiAssistantPanel.tsx:1619)는 **자발적 피드백**이지
+    #       표본 추출이 아니다. 0 은 사실이며, 스키마에는 lifecycle=general 의 하한이 없다(계획서 §3 B13).
+
+  # escalation: 생략 — 실물에 레드플래그·상향 사다리·인계 SLA 가 **없다.**
+  # 🔴 그런데 이 루프는 `severity: 'CRITICAL'` 과 "긴급 확인 필요" 문장을 만든다
+  #    (medical-ai.service.ts:1278,1344). 위급값 경보의 정본은 다른 축(LIS flag HH/LL 경로)이지
+  #    이 루프가 아니다 — 그러나 **"이 축의 경보는 다른 정본이 담당한다"를 선언할 자리가 없어**,
+  #    생략은 "책임 분담"이 아니라 "누락"과 구분되지 않는다.
+
+  budgets:
+    latency:
+      # p95_ms: (required) 🔴 실물에 **지연 예산이 없다.** 측정만 한다 —
+      #   `skillMetrics` 가 감사행에서 p50/p95 를 계산하지만(medical-ai.service.ts:2699)
+      #   그 값으로 무엇을 강제하지 않는다. 어떤 숫자를 적어도 그것은 **실물에 없는 약속**이다.
+      #   (참고로 코드 주석이 남긴 실측 서술은 "진료 보조 스킬 지연 12~32초"
+      #    patient-brief.service.ts:14 — p95 가 아니라 범위 서술이라 이 필드에 넣을 수 없다.)
+      timeout_ms: 120000
+      # 근거: `llmTimeoutMs = 120_000`(medical-ai.service.ts:89) — LLM 호출에 걸리는 타임아웃.
+      # ⚠️ 이것은 **호출 1회 타임아웃**이지 사용자 대기 예산이 아니다. 야간 배치는 별도로
+      #    환자당 60초 예산을 쓴다(`ai.brief.patientBudgetSec` · patient-brief.service.ts:201).
+      #    슬롯이 하나라 둘 중 하나만 적힌다.
+      on_timeout: fallback_message
+      # 근거: 타임아웃/오류 시 `chatLlm` 이 빈 문자열을 돌려주고(medical-ai.service.ts:574),
+      #       규칙 폴백이 결과를 만들며 `source: FALLBACK`/`UPSTREAM_FALLBACK` 으로 **말한다**(1350).
+      #       화면은 "AI 소견으로 쓸 수 없음 — 규칙 기반 대체"를 띄운다(AiAssistantPanel.tsx:174,260).
+      # 🔴 스키마 기본값은 `fallback_silent` 다(계획서 §3 B2). 우리는 기본값을 쓰면 안 되는 쪽이고,
+      #    JSON Schema 의 default 는 주입되지 않으므로(A1) **비워 두면 침묵 폴백이 문서상 기본이 된다.**
+    cost:
+      max_tokens_per_invocation: 800
+      # 근거: `num_predict: 800`(medical-ai.service.ts:1284).
+      # ⚠️ `num_predict` 는 **출력 토큰 상한**이고 스키마 이름은 호출당 총 토큰이다 — 근사 매핑이다.
+      #    입력 토큰 상한은 실물에 없다(프롬프트 길이 제한 없음).
+      # 🔴 관련 실측: 이 상한 때문에 답변이 잘리는 일이 실제로 있었고(ai-verify.ts:202 주석 "len 649·braces 7"),
+      #    코드는 잘린 사실을 `groundedOn` 에 적는다. 예산과 그 예산이 깨졌을 때의 정직성은 다른 슬롯인데
+      #    `budgets` 에는 후자가 없다.
+
+  audit:
+    record:
+      - verification_results
+      # 근거: `verifyFailed`(실패 규칙명 `|` 연결)를 감사행에 싣는다(medical-ai.controller.ts:232-235).
+      # 🔴 표현 손실 — 실제로 남기는 나머지 3키에 **대응하는 enum 값이 없다**:
+      #    `source`(AI/FALLBACK/UNAVAILABLE) · `reason`(사유 코드) · `latencyMs`.
+      #    반대로 enum 이 제공하는 `prompt_version`·`model_id`·`input_context_hash`·`resolved_resources`·
+      #    `raw_output`·`verified_output` 은 **하나도 남기지 않는다**(PHI 이거나 개념 자체가 없다).
+      #    → 여기에 그것들을 적으면 감사 산출물이 실물에 없는 컬럼을 만든다.
+    retention:
+      audit_log: P365D
+      # 근거: config 기본값 `security.audit.retentionDays = 365`(config-runtime.service.ts:292).
+      # 🔴 ⚠️ 실측: 이 키를 **읽는 코드가 없다**(`grep -rn "security.audit.retentionDays" apps/api/src apps/web/src`
+      #    → 선언 1행뿐). 즉 보존기간은 선언만 있고 집행 잡이 없다.
+      #    스키마에는 "선언은 있으나 집행되지 않음"을 적을 자리가 없어, 이 값은 실물보다 **안전하게** 읽힌다.
+      # raw_conversation: 생략 — 원시 대화를 저장하지 않는다(PHI 최소 · 감사행에 본문 금지).
+      #   🔴 "저장하지 않음"을 주장으로 적을 값이 없다(빈 문자열도 0 기간도 허용되지 않는 `^P` 패턴).
+    access_log_identity: clinician_of_record
+    # 근거: `AuditLog.userId` = 호출한 임상의(medical-ai.controller.ts:93-110). 에이전트에는 별도 주체가 없다.
+    # 🔴 실측(스키마가 못 잡는 것): 두 진입 경로 중 **`GET /api/v1/lab/orders/:orderId/ai-interpret` 는
+    #    감사행이 아예 남지 않는다.** 그 경로는 `auditAiEgress` 를 부르지 않고, 인터셉터의 PHI 열람 패턴
+    #    (`PHI_READ_PATTERNS` · audit-routes.ts:94-117)에도 `/api/v1/lab/results/<uuid>` 만 있어 매칭되지 않는다.
+    #    `audit` 블록은 루프당 하나라 "트리거마다 감사가 다르다"를 표현할 수 없다.
+
+  # evaluation: 생략 — 골든셋·레드팀·CI 게이트·섀도우 요건이 **하나도 없다.**
+  # 🔴 스키마는 이 생략을 잡지 못한다. `evaluation` 이 required 가 되는 조건은 `output.kind: draft_note` 뿐이고
+  #    (Spec.allOf[2]), L14(무조건 통과하는 CI 금지)도 `evaluation` 이 **있을 때만** 문다.
+  #    즉 평가를 통째로 빼면 통과하고, 성의 없이 넣으면 걸린다 — 유인이 뒤집혀 있다.
+
+  rollout:
+    kill_switch:
+      granularity: [global, loop]
+      # 근거: global = `ai.server.enabled`(false 면 503 · medical-ai.service.ts:172-175) ·
+      #       loop = `ai.skill.quality.action.interpretLab`(OFF/WARN/BLOCK · ai-skill-quality.ts:50-51)
+      fallback: emr_native_behavior
+      # 근거: 어느 쪽이 걸려도 진료 화면은 그대로 동작한다.
+      # 🔴 표현 손실: 두 스위치의 폴백이 **서로 다르다** — global 은 503 메시지, loop=BLOCK 은
+      #    탭을 남겨 두고 "왜 내렸는지"를 화면이 밝힌다(AiAssistantPanel.tsx:963 · "막으면 방치된다").
+      #    슬롯이 하나라 후자의 규약이 사라진다.
+      auto_trip:
+        - metric: ai_pass_rate
+          operator: <
+          # threshold: 🔴 하드락(§6.2 `rollout.kill_switch.auto_trip[].threshold`)이자 **실물 미설정**이다.
+          #   `ai.skill.quality.minAiRate` 기본값은 **빈 맵**이다(ai-skill-quality.ts:55) —
+          #   "감으로 박은 임계는 거짓 경보가 된다"라는 명시적 판단이며, 위원회가 실측에서 정하기로 돼 있다.
+          #   그런데 스키마는 `threshold` 를 required 로 둔다 → 하드락과 required 가 다시 충돌한다.
+          window: P30D
+          # 근거: `skillQuality(days = 30)`(medical-ai.service.ts:2714)
+          # 🔴 표현 손실(가장 아픈 자리) — **표본 하한을 적을 슬롯이 없다.**
+          #    실물 판정은 `calls < minCalls(기본 20)` 이면 어떤 조치도 하지 않는다
+          #    (`INSUFFICIENT_SAMPLE`/effect NONE · ai-skill-quality.ts:136) 그리고 `calls === 0` 의
+          #    통과율은 `0` 이 아니라 **`null`** 이다(121-122행). 스키마의 auto_trip 은
+          #    {metric, operator, threshold, window} 넷뿐이라 **호출 1건에도 자동 정지가 걸린다.**
+          #    이것이 계획서 §3 B6/B7("분모가 없으면 완결률은 100%가 된다")이 실제로 무는 자리다.
+    version_pinning: true
+    # ⚠️ sync 경로에는 실질 의미가 없고(실행 중 워크플로가 없다), 야간 배치도 버전 개념이 없다.
+    #    `default: true` 이지만 주입되지 않으므로(A1) 명시했다.
+
+  kpis:
+    - id: ai_pass_rate
+      direction: increase
+      # 근거: `aiOk / calls`(medical-ai.service.ts:2698 `aiOk: v.bySource.AI ?? 0`)
+      # 🔴 표현 손실 — **분자·분모가 없다**(계획서 §3 B6). 실물 규약은 이 지표의 핵심이 분모에 있다:
+      #    호출 0 이면 값은 `null`(산출 불가)이지 `0` 이 아니고, 표본 20 미만이면 판정 자체를 보류한다.
+      #    `Kpi` 에는 numerator/denominator/`min_sample`/`null_when_no_sample` 슬롯이 없으므로
+      #    자동 생성 대시보드는 **표본 0을 0%로 그린다** — 이 저장소가 7건 봉합한 바로 그 거짓말이다.
+      # baseline/target: 비운다 — 실측 기준선을 이 파일럿에서 재지 않았다(근거 없는 숫자를 적지 않는다).
+    - id: verify_rejected_by_rule
+      direction: decrease
+      # 근거: `verifyFailed` 규칙별 카운트(medical-ai.service.ts:2687)
+      # 🔴 같은 손실 — 규칙별 폐기 수의 분모는 "그 규칙이 평가된 호출 수"인데 적을 자리가 없다.
+    - id: skill_latency_p95_ms
+      direction: decrease
+      # 근거: `latencyP95Ms`(medical-ai.service.ts:2699 · 감사행의 latencyMs 분위수)
+      # ⚠️ 이 값에는 목표가 없다(위 budgets.latency.p95_ms 부재와 같은 사실).

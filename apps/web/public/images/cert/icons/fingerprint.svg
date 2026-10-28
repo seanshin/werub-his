@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round">
+  <!-- Fingerprint ridges -->
+  <path d="M12 2 Q5 4 5 12" fill="none"/>
+  <path d="M12 2 Q19 4 19 12" fill="none"/>
+  <path d="M7 6 Q7 12 7 16 Q7 20 10 21" fill="none"/>
+  <path d="M17 6 Q17 12 17 16 Q17 20 14 21" fill="none"/>
+  <path d="M9.5 5 Q9 10 9.5 14 Q10 18 12 19" fill="none"/>
+  <path d="M14.5 5 Q15 10 14.5 14 Q14 18 12 19" fill="none"/>
+  <path d="M12 7 L12 17" fill="none"/>
+</svg>

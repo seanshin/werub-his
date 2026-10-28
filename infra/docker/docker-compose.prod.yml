@@ -1,0 +1,242 @@
+# ============================================================================
+# HIS 단독 운영 compose — 컨테이너 설치 경로
+#
+# 🔴 **검증 상태를 먼저 밝힌다.** 이 경로는 `docker compose up` 으로 끝까지 올려 확인한 기록이 없다.
+#    빈 DB 설치에서 **검증된 정본 경로는 `infra/install/install.sh`**(2026-09-14 로컬 컨테이너 리허설)이고,
+#    운영 중 단일 서버 갱신은 `infra/scripts/deploy.sh` 다. 새 기관에는 그 두 경로를 먼저 안내한다.
+#    아래 2026-09-21 수정은 형제 프로젝트가 격리 네트워크에서 실제로 막힌 지점(R1~R19·R49)을
+#    **파일 대조로** 닫은 것이다 — `apps/api/test/architecture/container-install-contract.spec.ts` 가
+#    계약을 기계 대조하지만, 빌드·기동 성공을 보증하지는 않는다.
+#
+# 사용:
+#   cp .env.production.example .env.production   # 값 채우기
+#   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+#   # 최초 1회 — 관리자 계정(비밀번호는 환경변수로만 · 명령행 인자 금지)
+#   ADMIN_EMAIL=… ADMIN_PASSWORD=… ADMIN_FAMILY_NAME=… ADMIN_GIVEN_NAME=… \
+#     docker compose --env-file .env.production -f docker-compose.prod.yml \
+#     --profile bootstrap run --rm bootstrap-admin
+#
+# 🔴 빌드 메모리: Docker 데몬에 **6GB 이상**이 있어야 한다(customer-install-guide §2.1 실측 —
+#    웹 next build 는 5GB 한도에서 137 강제 종료).
+# ============================================================================
+services:
+  # 🔴 서비스·컨테이너 이름을 `his-` 로 고유화한다(R19) — 같은 호스트/네트워크에 형제 시스템(LIS 등)이
+  #    역시 `postgres` 라는 이름으로 뜨면 HIS 가 **남의 DB 로 붙어** 인증 실패했다.
+  his-postgres:
+    image: postgres:16-alpine
+    container_name: his-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hospitalrun}
+      POSTGRES_USER: ${DB_USER:-hospital}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-hospital} -d ${DB_NAME:-hospitalrun}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+
+  his-redis:
+    image: redis:7-alpine
+    container_name: his-redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ── 스키마 적용 ────────────────────────────────────────────────────────────
+  # 🔴 R5 `/app` 에서 돌아 schema.prisma 를 못 찾았다 → `working_dir` 로 apps/api 에서 돈다.
+  # 🔴 R5(더 깊은 원인) 운영 이미지는 `npm prune --production` 이라 **`prisma` CLI(devDependency)가 없다** —
+  #    격리 네트워크에서는 npx 가 받아올 수도 없다. → `target: builder`(개발 의존성이 살아 있는 단계)로 짓는다.
+  # 🔴 R7 종전 `&& npx prisma db seed` 는 ① 운영 이미지에 ts-node 가 없어 실행 불가였고
+  #    ② **데모 시드(가상 병원)** 라 판매본에 넣으면 안 된다(REAL 에서는 seed-mode-guard 가 어차피 거부한다).
+  #    필수 마스터 적재는 `infra/install/masters.manifest.tsv` 경로다 — 시드가 아니다.
+  # 🔴 R6 은 해소돼 있다 — GIN 마이그레이션의 `CREATE INDEX CONCURRENTLY` 는 2026-09-13 에
+  #    일반 CREATE INDEX 로 바뀌어(migrations/20260528000001_add_gin_indexes/migration.sql 머리말)
+  #    `migrate deploy` 가 한 트랜잭션에서 통과한다. 새 DB 의 정본은 `db push` 가 아니라 **migrate deploy** 다.
+  migrate:
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+      target: builder
+    working_dir: /app/apps/api
+    command: sh -c "npx prisma migrate deploy"
+    depends_on:
+      his-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:CHANGE_ME@his-postgres:5432/${DB_NAME:-hospitalrun}
+    restart: "no"
+
+  # ── 첫 관리자 1명 ──────────────────────────────────────────────────────────
+  # 🔴 R9 첫 관리자를 만드는 경로가 데모 시드뿐이었다. 스크립트는 이미 있다(`infra/install/create-admin.cjs` —
+  #    빈 DB 전용·사용자가 1명이라도 있으면 거부·비밀번호는 환경변수로만·12자 미만 거부).
+  #    🔴 `up` 에 물리지 않는다(profiles) — 사용자가 이미 있으면 종료코드 3 이라, 물려 두면 재기동마다
+  #    `service_completed_successfully` 에 걸려 API 가 못 뜬다. 최초 1회 `run --rm` 으로 부른다.
+  # 🔴 최초 로그인 비밀번호 변경은 **알림까지이고 차단은 아니다**(실측): 이 스크립트가 만든 계정은
+  #    `passwordChangedAt` 이 null 이라 `AuthService.isPasswordExpired` 가 "최초 설정 필요"로 판정하고
+  #    `GET /auth/password-status` → 화면 배너(`PasswordStatusBanner`)가 그 사실을 말한다.
+  #    로그인 자체를 막는 경로는 없다 — 설치 기관에 그대로 안내한다.
+  bootstrap-admin:
+    profiles: ["bootstrap"]
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+      target: builder
+    working_dir: /app/apps/api
+    command: node /app/infra/install/create-admin.cjs
+    depends_on:
+      his-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:CHANGE_ME@his-postgres:5432/${DB_NAME:-hospitalrun}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_FAMILY_NAME: ${ADMIN_FAMILY_NAME:-}
+      ADMIN_GIVEN_NAME: ${ADMIN_GIVEN_NAME:-}
+    restart: "no"
+
+  api:
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    restart: always
+    depends_on:
+      his-postgres:
+        condition: service_healthy
+      his-redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # 🔴 코드가 읽는 키는 40개가 넘고 그중 일부는 **REAL 에서 비면 부팅을 거부**한다
+    #    (PDF_SERVICE_TOKEN·PDF_RENDER_SECRET·DOC_DOWNLOAD_SECRET 등 — release-security.ts).
+    #    종전 compose 는 4개만 넘겨 설치본이 뜰 수 없었다 → 설치 파일을 통째로 싣는다.
+    #    `environment` 가 `env_file` 을 이긴다(컨테이너 안에서만 다른 값이어야 하는 것들).
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      HIS_MODE: ${HIS_MODE:-REAL}
+      DATABASE_URL: postgresql://${DB_USER:CHANGE_ME@his-postgres:5432/${DB_NAME:-hospitalrun}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@his-redis:6379
+      # 🔴 R11 `main.ts` 의 기본값은 `127.0.0.1`(루프백) — 넘기지 않으면 web·nginx 컨테이너가 API 에 닿지 못한다.
+      BIND_HOST: 0.0.0.0
+      # 🔴 R16 백업 판정(go-live `security.dbBackup`)의 기본 경로는 특정 서버의 홈 아래라 새 설치본은 늘 ENOENT 였다.
+      DB_BACKUP_DIR: ${DB_BACKUP_DIR:-/backups}
+      # 🔴 R25 API 는 10분마다 공개 사이트 최신성을 **외부로** 확인한다(cron-liveness `sentinel.probeCapture`).
+      #    비워 두면 코드 기본값(다른 기관의 도메인)으로 나간다 — 격리 설치 기관은 자기 주소를 반드시 넣는다.
+      #    🔴 현재 코드에는 이 확인을 **끄는 스위치가 없다**(설정만으로 막지 못한다 — 갈래 E 회신 R25).
+      HOMEPAGE_PUBLIC_URL: ${HOMEPAGE_PUBLIC_URL:-}
+      LOG_LEVEL: warn
+    volumes:
+      - ./backups:/backups:ro
+    healthcheck:
+      # 🔴 R12 `localhost` 는 컨테이너에서 `::1` 로 먼저 풀려 0.0.0.0 바인딩(IPv4)에 닿지 못해 unhealthy 였다.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+      replicas: 2
+
+  # ── 상시 감시자 ────────────────────────────────────────────────────────────
+  # 🔴 R49 감시자가 `deploy.sh` 의 pm2 경로에만 있어 **컨테이너 설치 기관은 감시자 없이** 운영하게 됐다.
+  #    HTTP 가 없는 별도 프로세스이고(화면은 API 가 원장을 읽어 준다) API 이미지를 그대로 쓴다.
+  # 🔴 `replicas` 를 두지 않는다 — 스윕이 두 벌 돌면 같은 주기에 판정이 두 번 적재된다.
+  # 🔴 정합성 축은 `infra/scripts/data-integrity-scan.sql` 을, 흐름 축 일부는 `apps/api/src` 를 읽는다.
+  #    두 경로 모두 이미지 안에 남아 있어야 한다(apps/api/Dockerfile 의 prune 주석 참조).
+  sentinel:
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    container_name: his-sentinel
+    restart: always
+    command: node apps/api/dist/sentinel.main.js
+    depends_on:
+      his-postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      # 🔴 감시자만 HIS_MODE 가 빠져 REAL 로 돌던 사고가 pm2 경로에서 있었다(deploy.sh 주석) — 같은 값으로 명시한다.
+      HIS_MODE: ${HIS_MODE:-REAL}
+      DATABASE_URL: postgresql://${DB_USER:CHANGE_ME@his-postgres:5432/${DB_NAME:-hospitalrun}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@his-redis:6379
+      SENTINEL_REPO_ROOT: /app
+      LOG_LEVEL: warn
+    volumes:
+      - ./backups:/backups:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  web:
+    build:
+      context: ../../
+      dockerfile: apps/web/Dockerfile
+      args:
+        # 🔴 R14 종전 기본값은 특정 설치본 주소(`https://his.hospital.kr`)였다. 이 값은 **빌드에 박힌다**.
+        #    정본은 빈 문자열이다 — 브라우저가 상대경로를 쓴다(CLAUDE.md Deployment Rules).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_HIS_MODE: ${HIS_MODE:-REAL}
+    restart: always
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      INTERNAL_API_URL: http://api:4000
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+      replicas: 2
+
+  nginx:
+    image: nginx:alpine
+    container_name: his-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # 🔴 R13 `prod.conf` 는 `ohif`·`orthanc`·`pacs-api` upstream 을 선언한다 — 이 compose 에는 그 컨테이너가
+      #    없어 nginx 가 `host not found in upstream` 으로 **기동을 거부**했다. HIS 단독용 설정을 따로 둔다.
+      #    PACS 를 함께 설치하는 기관은 `NGINX_CONF=./nginx/prod.conf` 로 바꾼다(prod.conf 는 수정 금지).
+      - ${NGINX_CONF:-./nginx/prod-his-only.conf}:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - web
+      - api
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  pgdata:
+    driver: local

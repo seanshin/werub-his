@@ -1,0 +1,46 @@
+node_modules/
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+uploads/
+# API 비공개 저장소(진료 첨부·스크라이브 녹음 원음) — cwd=apps/api 기준 `storage/` · 로컬 개발에서 환자 파일이 커밋되지 않게
+apps/api/storage/
+/storage/
+
+# env
+.env
+.env.local
+.env.*.local
+# 배포 설치 대상 설정(서버 주소·경로) — 형식은 infra/scripts/deploy.env.example
+infra/scripts/deploy.env
+# 배포가 서버에서 쓰는 산출물 기록(커밋·빌드 시각) — 로컬에 생기면 커밋하지 않는다
+apps/api/BUILD_INFO.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+npm-debug.log*
+
+# test
+coverage/
+
+# docker
+pgdata/
+
+# Agent scratch memory (local)
+**/.claude/agent-memory/
+/MEMORY.md
+docs/.pdca-snapshots/
+
+# 트랜잭션 경계 스캔 산출물 — 2026-07-28 세션이 커밋한 채 남아 있던 것(참조처 0). 정본은 test/architecture/tx-boundary-scan.ts
+tx-rows.json

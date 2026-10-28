@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospital RUN — 운영 · 사용 매뉴얼</title>
+<style>
+  :root{
+    --ground:#eef2f5;--surface:#fff;--surface-2:#f6f8fa;--border:#d9e0e7;--border-strong:#c2ccd6;
+    --ink:#17222e;--ink-soft:#35485a;--muted:#61717f;--faint:#8a97a3;
+    --accent:#0d7d8a;--accent-ink:#0a5d67;--accent-wash:#e2f0f2;--blue:#1f5f9e;--blue-wash:#e6eef7;
+    --good:#2c8a5b;--good-wash:#e2f1e9;--warn:#b5730d;--warn-wash:#f6ecd8;--crit:#c0392b;--crit-wash:#f7e3e0;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic","Segoe UI",Roboto,sans-serif;
+    --font-mono:"SF Mono","JetBrains Mono","D2Coding",ui-monospace,Menlo,Consolas,monospace;
+    --radius:10px;--radius-sm:6px;--shadow:0 1px 2px rgba(23,34,46,.04),0 4px 16px rgba(23,34,46,.06);--maxw:860px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --ground:#0b1017;--surface:#131c26;--surface-2:#0f1720;--border:#223140;--border-strong:#2f4356;
+    --ink:#e7edf3;--ink-soft:#b9c6d2;--muted:#8b9aa8;--faint:#6a7a88;
+    --accent:#38b6c3;--accent-ink:#6fd2dc;--accent-wash:#123037;--blue:#5b9bd8;--blue-wash:#14263a;
+    --good:#4bb37e;--good-wash:#12291f;--warn:#d69a3c;--warn-wash:#2e2413;--crit:#e0685a;--crit-wash:#2e1815;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 18px rgba(0,0,0,.35);}}
+  :root[data-theme="light"]{--ground:#eef2f5;--surface:#fff;--surface-2:#f6f8fa;--border:#d9e0e7;--border-strong:#c2ccd6;--ink:#17222e;--ink-soft:#35485a;--muted:#61717f;--faint:#8a97a3;--accent:#0d7d8a;--accent-ink:#0a5d67;--accent-wash:#e2f0f2;--blue:#1f5f9e;--blue-wash:#e6eef7;--good:#2c8a5b;--good-wash:#e2f1e9;--warn:#b5730d;--warn-wash:#f6ecd8;--crit:#c0392b;--crit-wash:#f7e3e0;--shadow:0 1px 2px rgba(23,34,46,.04),0 4px 16px rgba(23,34,46,.06);}
+  :root[data-theme="dark"]{--ground:#0b1017;--surface:#131c26;--surface-2:#0f1720;--border:#223140;--border-strong:#2f4356;--ink:#e7edf3;--ink-soft:#b9c6d2;--muted:#8b9aa8;--faint:#6a7a88;--accent:#38b6c3;--accent-ink:#6fd2dc;--accent-wash:#123037;--blue:#5b9bd8;--blue-wash:#14263a;--good:#4bb37e;--good-wash:#12291f;--warn:#d69a3c;--warn-wash:#2e2413;--crit:#e0685a;--crit-wash:#2e1815;--shadow:0 1px 2px rgba(0,0,0,.3),0 4px 18px rgba(0,0,0,.35);}
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-sans);line-height:1.62;font-size:15.5px;-webkit-font-smoothing:antialiased;}
+  a{color:var(--accent-ink);text-decoration:none;}a:hover{text-decoration:underline;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px;}
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:11px 24px;background:color-mix(in srgb,var(--surface) 86%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
+  .topbar .mark{width:28px;height:28px;border-radius:8px;flex:none;background:linear-gradient(150deg,var(--accent),var(--blue));display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;}
+  .topbar .tt{font-weight:650;font-size:14px;letter-spacing:-.01em;}
+  .topbar .spacer{flex:1;}
+  .badge{font-family:var(--font-mono);font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--accent-wash);color:var(--accent-ink);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);}
+  .theme-btn{font:inherit;font-size:12.5px;cursor:pointer;padding:5px 11px;border-radius:20px;background:var(--surface-2);color:var(--ink-soft);border:1px solid var(--border);display:inline-flex;gap:6px;align-items:center;}
+  .theme-btn:hover{border-color:var(--border-strong);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:26px 26px 100px;}
+  .hero .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.14em;font-weight:700;color:var(--accent);}
+  h1{font-size:30px;line-height:1.14;letter-spacing:-.02em;margin:8px 0 8px;font-weight:780;text-wrap:balance;}
+  .lead{font-size:16px;color:var(--muted);margin:4px 0 8px;max-width:64ch;}
+  section{padding-top:26px;margin-top:18px;scroll-margin-top:60px;}
+  h2{font-size:21px;line-height:1.2;letter-spacing:-.02em;margin:6px 0 6px;font-weight:720;padding-bottom:8px;border-bottom:1px solid var(--border);text-wrap:balance;}
+  h2 .ix{font-family:var(--font-mono);font-size:13px;color:var(--accent);margin-right:8px;}
+  h3{font-size:15.5px;margin:22px 0 6px;font-weight:680;letter-spacing:-.01em;}
+  p{margin:9px 0;color:var(--ink-soft);}
+  strong{color:var(--ink);font-weight:650;}
+  code{font-family:var(--font-mono);font-size:.86em;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:.08em .38em;color:var(--ink-soft);}
+  ul,ol{color:var(--ink-soft);padding-left:20px;margin:8px 0;}li{margin:5px 0;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);}
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);margin:18px 0 4px;}
+  .toc .th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:700;margin-bottom:8px;}
+  .toc ol{columns:2;column-gap:26px;margin:0;padding-left:18px;font-size:13.5px;}
+  @media (max-width:560px){.toc ol{columns:1;}}
+  .tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);margin:13px 0;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:460px;}
+  th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{background:var(--surface-2);font-weight:650;color:var(--ink-soft);font-size:12px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:none;}tbody tr:hover td{background:color-mix(in srgb,var(--accent-wash) 40%,transparent);}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap;}
+  .pill.good{background:var(--good-wash);color:var(--good);border-color:color-mix(in srgb,var(--good) 28%,transparent);}
+  .pill.warn{background:var(--warn-wash);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 28%,transparent);}
+  .pill.crit{background:var(--crit-wash);color:var(--crit);border-color:color-mix(in srgb,var(--crit) 28%,transparent);}
+  .pill.blue{background:var(--blue-wash);color:var(--blue);border-color:color-mix(in srgb,var(--blue) 28%,transparent);}
+  .note{border-left:3px solid var(--accent);background:var(--accent-wash);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:11px 15px;margin:13px 0;font-size:13.5px;color:var(--ink-soft);}
+  .note.warn{border-left-color:var(--warn);background:var(--warn-wash);}
+  .note.crit{border-left-color:var(--crit);background:var(--crit-wash);}
+  .note .h{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px;color:var(--accent-ink);}
+  .note.warn .h{color:var(--warn);}.note.crit .h{color:var(--crit);}
+  .kbd{font-family:var(--font-mono);font-size:11.5px;background:var(--surface-2);border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--ink-soft);}
+  .steps{counter-reset:s;list-style:none;padding-left:0;margin:10px 0;}
+  .steps li{counter-increment:s;position:relative;padding-left:34px;margin:9px 0;}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:0;width:23px;height:23px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);font-family:var(--font-mono);font-size:12px;font-weight:700;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);}
+  .rolecard{margin:12px 0;}
+  .rolecard .rh{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .rolecard .rt{font-weight:700;font-size:15px;letter-spacing:-.01em;}
+  .rolecard .rs{font-size:12px;color:var(--muted);}
+  pre{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;overflow-x:auto;font-family:var(--font-mono);font-size:12.5px;line-height:1.55;color:var(--ink-soft);}
+  .foot{color:var(--faint);font-size:12px;margin-top:38px;padding-top:16px;border-top:1px solid var(--border);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+  @media (max-width:560px){.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="mark">HR</div>
+  <span class="tt">운영 · 사용 매뉴얼</span>
+  <span class="spacer"></span>
+  <span class="badge">v3.97.0</span>
+  <button class="theme-btn" id="themeBtn" aria-label="테마 전환"><span id="themeIco">◐</span> 테마</button>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Operations &amp; User Manual · 운영자 · 의료진</div>
+    <h1>Hospital RUN 운영 · 사용 매뉴얼</h1>
+    <p class="lead">원무·의사·간호·약사·검사·관리자 역할별 사용법과, 서버 운영·config 게이트·문제 해결 절차를 한 곳에 정리했습니다. 아키텍처·연동 세부는 별도 <strong>문서 허브</strong>·<strong>연동 스펙</strong>을 참조하세요.</p>
+  </div>
+
+  <div class="toc">
+    <div class="th">목차</div>
+    <ol>
+      <li><a href="#login">로그인 · 계정</a></li>
+      <li><a href="#nav">화면 이동 · 핫키</a></li>
+      <li><a href="#roles">역할별 워크플로우</a></li>
+      <li><a href="#gates">config 게이트 운영</a></li>
+      <li><a href="#runbook">서버 운영 런북</a></li>
+      <li><a href="#trouble">자주 겪는 문제</a></li>
+    </ol>
+  </div>
+
+  <section id="login">
+    <h2><span class="ix">01</span>로그인 · 계정</h2>
+    <div class="tw"><table>
+      <thead><tr><th>구분</th><th>계정</th><th>비밀번호</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>관리자</td><td><code>admin@hospital.example.org</code></td><td><code>staff1234!</code></td><td>ADMIN 권한</td></tr>
+        <tr><td>직원(공통)</td><td>역할별 계정</td><td><code>staff1234!</code></td><td>DOCTOR·NURSE·PHARMACIST·LAB_TECH·STAFF</td></tr>
+        <tr><td>환자</td><td>환자 계정</td><td><code>patient1234!</code></td><td>포털·모바일</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note warn"><span class="h">계정 잠금</span>비밀번호 <strong>반복 실패 시 15분 잠금</strong>됩니다. 잠긴 계정은 시간 경과 후 재시도하거나 관리자에게 초기화를 요청하세요. 비밀번호 추정 반복은 금지입니다. 상세 계정은 <code>docs/05-reference/TEST-ACCOUNTS.md</code>.</div>
+    <p>직원은 향후 <strong>패스워드리스 SSO</strong>(WebAuthn·생체·디바이스 신뢰)로 전환됩니다. 차트 서명·처방 등 민감 작업은 <strong>step-up 생체 승인</strong>이 요구될 수 있습니다(관리자 config에 따라).</p>
+  </section>
+
+  <section id="nav">
+    <h2><span class="ix">02</span>화면 이동 · 핫키</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">빠른 이동</h3>
+        <ul style="margin:0">
+          <li><span class="kbd">g</span> 입력 → 화면 코드 입력 → 즉시 이동</li>
+          <li><span class="kbd">Cmd/Ctrl</span>+<span class="kbd">K</span> 통합검색(환자·화면·기능)</li>
+          <li>최근/즐겨찾기 화면, 사이드바 코드 배지</li>
+          <li>치트시트 인쇄 <code>/settings/shortcuts</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">화면 내 액션 핫키</h3>
+        <ul style="margin:0">
+          <li><span class="kbd">⌘/Ctrl</span>+<span class="kbd">Enter</span> 주요 액션(저장·제출)</li>
+          <li><span class="kbd">Alt</span>+문자 보조 액션</li>
+          <li><span class="kbd">?</span> 현재 화면 핫키 도움말</li>
+          <li>접수·처방·수납·간호 화면 적용 (IME 가드)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="roles">
+    <h2><span class="ix">03</span>역할별 워크플로우</h2>
+
+    <div class="card rolecard">
+      <div class="rh"><span class="rt">원무 · 접수</span><span class="pill blue">접수 데스크 · 수납</span></div>
+      <ol class="steps">
+        <li>환자 검색(동명이인 AI 인지) 또는 <strong>신규 등록</strong> — 주소검색·주민번호 암호화·신분증 OCR(비저장)·환자 사진</li>
+        <li><strong>자격조회</strong>(공단) → 본인확인 → copay 자격 전환(차상위·입원 등)</li>
+        <li>접수(직접·QR 스캔·길안내) → 진료 대기열 등록</li>
+        <li>수납 — 분할납부·미수금·예치금, 영수증 발급(진위 QR)</li>
+      </ol>
+    </div>
+
+    <div class="card rolecard">
+      <div class="rh"><span class="rt">의사</span><span class="pill blue">환자차트 · CPOE · 콕핏</span></div>
+      <ol class="steps">
+        <li>진료 시작 → 환자차트(전문과별 특화 레이아웃 16과)</li>
+        <li><strong>주상병</strong> 입력 — KCD-8 필터·확실도·청구 구분 (제한검증: 주상병 불가·성별·연령)</li>
+        <li>오더/처방 — 오더세트·포뮬러리(원내 배지)·<strong>DUR·CDSS</strong> 경고, 고위험 약물(ISMP/LASA)</li>
+        <li>차트 서명 — 필요 시 <strong>step-up 생체 승인</strong>. 수정 후 재서명(AMENDED)</li>
+      </ol>
+      <div class="note"><span class="h">큰 화면 board · 콕핏</span>회진·병동 관리는 큰 화면 board(마소너리 배치·패널 핀 고정)와 진료 콕핏을 활용하세요.</div>
+    </div>
+
+    <div class="card rolecard">
+      <div class="rh"><span class="rt">간호사</span><span class="pill blue">간호 스테이션 · 태블릿 · 간호기록</span></div>
+      <ol class="steps">
+        <li>병동 재원 실시간 보드 — EWS·낙상·투약지연·미서명 배지</li>
+        <li>라운드(태블릿 라운드보드·QR) → 바이탈/EWS 측정</li>
+        <li>투약 — MAR(투약기록), 구두처방 Read-back</li>
+        <li>간호기록 — <strong>AI 초안 → 검토·서명</strong>(책임 서명 간호사 불변). NANDA/NIC/NOC</li>
+      </ol>
+    </div>
+
+    <div class="card rolecard">
+      <div class="rh"><span class="rt">약사</span><span class="pill blue">약국 · 조제 · 마약류</span></div>
+      <ol class="steps">
+        <li>처방 검토 — DUR·용량 검증, 원내/원외 구분</li>
+        <li>조제 — 바코드(GS1/KD)·배치(로트)·유효기간, 마약류 이중확인</li>
+        <li>복약지도·대체조제·ADR 보고</li>
+        <li><strong>AI 약물설명 승인</strong> — <code>/admin/drug-explain</code>(PHARMACIST/ADMIN). 승인분만 환자에게 노출, 재생성 시 승인 리셋</li>
+      </ol>
+    </div>
+
+    <div class="grid2">
+      <div class="card rolecard">
+        <div class="rh"><span class="rt">검사 · 영상</span></div>
+        <ul style="margin:0">
+          <li>오더 접수 → 결과 입력/판독 → 리포트</li>
+          <li>영상은 <code>/pacs/</code> 링크로 OHIF·Orthanc 조회</li>
+          <li>병리·혈액은행(교차시험)·검사실 WS</li>
+        </ul>
+      </div>
+      <div class="card rolecard">
+        <div class="rh"><span class="rt">환자</span></div>
+        <ul style="margin:0">
+          <li>포털/모바일(31화면) — 예약·검사결과(쉽게보기)</li>
+          <li>의무기록 발급·원격진료·셀프 체크인</li>
+          <li>동의서 모바일 서명·건강검진 결과</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card rolecard">
+      <div class="rh"><span class="rt">관리자</span><span class="pill blue">Admin 105p</span></div>
+      <ul style="margin:0">
+        <li><strong>권한/부서</strong> — 기능 접근 매트릭스(access-control), 4-eyes 승인</li>
+        <li><strong>코드마스터</strong> — 약품·상병·수가, 포뮬러리 위원회 7영역</li>
+        <li><strong>시행게이트</strong> — 포뮬러리·상병제한 OFF/WARN/BLOCK</li>
+        <li><strong>CMS</strong> — 홈페이지·팝업·배너, 대시보드 템플릿, 통합 매뉴얼(<code>/custom/&lt;slug&gt;</code>)</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="gates">
+    <h2><span class="ix">04</span>config 게이트 운영</h2>
+    <p>신규·민감 기능 대부분은 <strong>config 플래그로 게이트</strong>되며 기본 OFF로 배포 후 점진 활성화합니다. 관리자 콘솔에서 SystemConfig로 조정합니다.</p>
+    <div class="tw"><table>
+      <thead><tr><th>플래그</th><th>기능</th><th>값</th><th>기본</th></tr></thead>
+      <tbody>
+        <tr><td><code>ai.server.enabled</code></td><td>WeRU.B AI 서버 kill-switch(끄면 503)</td><td>on/off</td><td><span class="pill">환경별</span></td></tr>
+        <tr><td><code>formulary.enforce</code></td><td>원내 처방집 시행(영역별)</td><td>OFF/WARN/BLOCK</td><td><span class="pill">OFF</span></td></tr>
+        <tr><td><code>diagnosis.restrictionEnforce</code></td><td>상병 제한(주상병 불가·성별·연령)</td><td>OFF/WARN/BLOCK</td><td><span class="pill">OFF</span></td></tr>
+        <tr><td><code>stepUpActions</code></td><td>생체 승인 요구 작업(차트서명·처방)</td><td>목록</td><td><span class="pill">환경별</span></td></tr>
+        <tr><td><code>dev.demoDateRoll</code></td><td>데모 데이터 자정 오늘로 시프트</td><td>on/off</td><td><span class="pill">OFF</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><span class="h">시행게이트 3단계</span><strong>OFF</strong>=표시만 · <strong>WARN</strong>=경고 동봉(진행 가능) · <strong>BLOCK</strong>=차단(400). 파일럿은 WARN으로 시작해 안정화 후 BLOCK 전환을 권장합니다.</div>
+  </section>
+
+  <section id="runbook">
+    <h2><span class="ix">05</span>서버 운영 런북</h2>
+    <h3>서비스 재시작 · 배포</h3>
+    <pre># 개별 서비스만 재시작 (전체 restart 금지 — OpenPACS 공유)
+docker compose restart api web
+
+# 배포 (자동 백업 포함)
+./infra/scripts/deploy.sh --api          # API만
+./infra/scripts/deploy.sh --schema --api # 스키마 변경 + API
+./infra/scripts/deploy.sh --all          # 전체
+./infra/scripts/deploy.sh --backup       # DB 백업만</pre>
+    <div class="grid2">
+      <div class="note warn"><span class="h">BE 수정 후</span><code>nest build</code> 필수 — pm2가 <code>dist/main.js</code> 실행. 신규 Prisma 모델은 서버에서 <code>prisma generate</code> + build + restart(안 하면 크래시).</div>
+      <div class="note crit"><span class="h">데이터 보호</span><code>db push --accept-data-loss</code> 금지. DB 비밀번호(<code>hospital</code>/<code>secret</code>) 변경 금지 — OpenPACS 공유. PACS(orthanc/ohif/nginx <code>/pacs/</code>) 수정 금지.</div>
+    </div>
+    <h3>데이터 · 시드</h3>
+    <ul>
+      <li>시드: <code>npm run db:seed</code> (멱등 · 15,588줄)</li>
+      <li>데모 날짜 롤포워드: config <code>dev.demoDateRoll</code> 또는 ADMIN <code>/dev/demo/roll-forward</code></li>
+      <li>Self-healing: 서버 시작 시 MediaService가 파일시스템 스캔 → 미디어 DB 자동 복구</li>
+    </ul>
+    <p style="font-size:13px;color:var(--faint)">상세 런북: <code>docs/OPERATIONS.md</code> · <code>DEPLOYMENT.md</code> · <code>go-live-checklist-security.md</code> · <code>fcm-push-activation-runbook.md</code> · <code>terminal-zero-trust-production-ops.md</code>.</p>
+  </section>
+
+  <section id="trouble">
+    <h2><span class="ix">06</span>자주 겪는 문제</h2>
+    <div class="tw"><table>
+      <thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead>
+      <tbody>
+        <tr><td>배포했는데 BE 변경 미반영</td><td>pm2가 <code>dist/main.js</code> 실행</td><td><code>nest build</code> 후 restart</td></tr>
+        <tr><td>브라우저 API 연결 실패</td><td>빌드에 <code>NEXT_PUBLIC_API_URL=localhost</code> 포함</td><td>빌드 시 <code>NEXT_PUBLIC_API_URL=''</code>(상대경로)</td></tr>
+        <tr><td>홈페이지 401 에러</td><td><code>(homepage)</code>에서 apiClient가 JWT 자동 포함</td><td><code>fetch()</code> 직접 사용</td></tr>
+        <tr><td>AI 기능 503</td><td><code>ai.server.enabled</code> OFF 또는 GPU 자원</td><td>config 확인 / AI팀 문의(WeRU.B)</td></tr>
+        <tr><td>미디어 이미지 깨짐</td><td>파일-DB 불일치</td><td>서버 재시작 시 self-healing 자동 복구</td></tr>
+        <tr><td>계정 로그인 불가</td><td>15분 반복실패 잠금</td><td>시간 경과 후 재시도 / 관리자 초기화</td></tr>
+      </tbody>
+    </table></div>
+    <div class="foot">
+      Hospital RUN 운영 · 사용 매뉴얼 · v3.97.0 · 실측 기준 2026-08-10 · <code>his.example.org</code><br>
+      관련 문서: 아키텍처 &amp; 문서 허브 · 외부 연동 스펙 · <code>docs/</code>(PDCA)
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement,b=document.getElementById('themeBtn'),i=document.getElementById('themeIco');
+  b.addEventListener('click',function(){
+    var c=root.getAttribute('data-theme');
+    if(!c)c=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    var n=c==='dark'?'light':'dark';root.setAttribute('data-theme',n);i.textContent=n==='dark'?'☾':'☀';
+  });
+})();
+</script>
+
+</body>
+</html>

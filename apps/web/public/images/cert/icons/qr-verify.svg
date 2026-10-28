@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <!-- QR code pattern -->
+  <!-- Top-left module -->
+  <rect x="2" y="2" width="7" height="7" rx="1" fill="none" stroke="#6B7280" stroke-width="1.5"/>
+  <rect x="4" y="4" width="3" height="3" rx="0.5" fill="#6B7280"/>
+  <!-- Top-right module -->
+  <rect x="15" y="2" width="7" height="7" rx="1" fill="none" stroke="#6B7280" stroke-width="1.5"/>
+  <rect x="17" y="4" width="3" height="3" rx="0.5" fill="#6B7280"/>
+  <!-- Bottom-left module -->
+  <rect x="2" y="15" width="7" height="7" rx="1" fill="none" stroke="#6B7280" stroke-width="1.5"/>
+  <rect x="4" y="17" width="3" height="3" rx="0.5" fill="#6B7280"/>
+  <!-- Data dots -->
+  <rect x="11" y="2" width="2" height="2" rx="0.3" fill="#6B7280"/>
+  <rect x="11" y="6" width="2" height="2" rx="0.3" fill="#6B7280"/>
+  <rect x="2" y="11" width="2" height="2" rx="0.3" fill="#6B7280"/>
+  <rect x="6" y="11" width="2" height="2" rx="0.3" fill="#6B7280"/>
+  <rect x="11" y="11" width="2" height="2" rx="0.3" fill="#6B7280"/>
+  <!-- Magnifying glass overlay -->
+  <circle cx="18" cy="18" r="4" fill="white" stroke="#3B82F6" stroke-width="2"/>
+  <line x1="21" y1="21" x2="23" y2="23" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+  <!-- Checkmark in magnifier -->
+  <path d="M16 18 L17.5 19.5 L20 16.5" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

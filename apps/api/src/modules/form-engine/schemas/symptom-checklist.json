@@ -1,0 +1,89 @@
+{
+  "name": "symptom-checklist",
+  "version": "1.0",
+  "locale": "ko",
+  "pages": [{
+    "label": "증상 체크리스트",
+    "sections": [
+      {
+        "label": "일반 증상",
+        "questions": [
+          {
+            "id": "fever",
+            "label": "발열",
+            "type": "select",
+            "options": [
+              { "value": "none", "label": "없음" },
+              { "value": "mild", "label": "미열 (37.5~38°C)" },
+              { "value": "moderate", "label": "중등도 (38~39°C)" },
+              { "value": "high", "label": "고열 (39°C 이상)" }
+            ]
+          },
+          {
+            "id": "cough",
+            "label": "기침",
+            "type": "checkbox",
+            "validation": { "required": false }
+          },
+          {
+            "id": "soreThroat",
+            "label": "인후통",
+            "type": "checkbox"
+          },
+          {
+            "id": "headache",
+            "label": "두통",
+            "type": "checkbox"
+          },
+          {
+            "id": "fatigue",
+            "label": "피로감",
+            "type": "checkbox"
+          }
+        ]
+      },
+      {
+        "label": "소화기 증상",
+        "questions": [
+          {
+            "id": "nausea",
+            "label": "오심/구토",
+            "type": "checkbox"
+          },
+          {
+            "id": "abdominalPain",
+            "label": "복통",
+            "type": "select",
+            "options": [
+              { "value": "none", "label": "없음" },
+              { "value": "mild", "label": "경미" },
+              { "value": "moderate", "label": "중등도" },
+              { "value": "severe", "label": "심함" }
+            ]
+          },
+          {
+            "id": "diarrhea",
+            "label": "설사",
+            "type": "checkbox"
+          }
+        ]
+      },
+      {
+        "label": "추가 사항",
+        "questions": [
+          {
+            "id": "onsetDate",
+            "label": "증상 발생일",
+            "type": "date",
+            "validation": { "required": true }
+          },
+          {
+            "id": "additionalNotes",
+            "label": "기타 증상/메모",
+            "type": "textarea"
+          }
+        ]
+      }
+    ]
+  }]
+}

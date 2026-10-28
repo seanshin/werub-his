@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80">
+  <!-- Outer border - Korean stamp style -->
+  <rect x="4" y="4" width="232" height="72" rx="8" ry="8" fill="none" stroke="#DC2626" stroke-width="3"/>
+  <rect x="10" y="10" width="220" height="60" rx="4" ry="4" fill="none" stroke="#DC2626" stroke-width="1.5"/>
+  <!-- Shield icon on left -->
+  <g transform="translate(24, 16)">
+    <path d="M14 0L2 6V15C2 23 7.6 30.4 14 32C20.4 30.4 26 23 26 15V6L14 0Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M10 16L13 19L18 14" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Vertical divider -->
+  <line x1="64" y1="18" x2="64" y2="62" stroke="#DC2626" stroke-width="1.5"/>
+  <!-- Text -->
+  <text x="148" y="33" text-anchor="middle" fill="#DC2626" font-family="'Noto Sans KR', 'Malgun Gothic', sans-serif" font-size="16" font-weight="600" letter-spacing="2">전자서명</text>
+  <text x="148" y="60" text-anchor="middle" fill="#DC2626" font-family="'Noto Sans KR', 'Malgun Gothic', sans-serif" font-size="20" font-weight="700" letter-spacing="4">완 료</text>
+</svg>

@@ -1,0 +1,40 @@
+// 확장 위젯 컴포넌트 — 범용 API 위젯 패턴
+// 각 위젯은 ApiWidget/ApiTableWidget/ApiStatsWidget를 래핑하여 endpoint만 지정
+'use client';
+
+export { default as AppointmentsWidget } from './AppointmentsWidget';
+export { default as ErStatusWidget } from './ErStatusWidget';
+export { default as ErQueueWidget } from './ErQueueWidget';
+export { default as IcuDashboardWidget } from './IcuDashboardWidget';
+export { default as IcuAlertsWidget } from './IcuAlertsWidget';
+export { default as LabQueueWidget } from './LabQueueWidget';
+export { default as ImagingQueueWidget } from './ImagingQueueWidget';
+export { default as LabStatsWidget } from './LabStatsWidget';
+export { default as PharmacyQueueWidget } from './PharmacyQueueWidget';
+export { default as LowStockWidget } from './LowStockWidget';
+export { default as ExpiringDrugsWidget } from './ExpiringDrugsWidget';
+export { default as BloodBankWidget } from './BloodBankWidget';
+export { default as AdrStatsWidget } from './AdrStatsWidget';
+export { default as RevenueTodayWidget } from './RevenueTodayWidget';
+export { default as ClaimsWidget } from './ClaimsWidget';
+export { default as CashierQueueWidget } from './CashierQueueWidget';
+export { default as DailySettlementWidget } from './DailySettlementWidget';
+export { default as BedStatusWidget } from './BedStatusWidget';
+export { default as BedByWardWidget } from './BedByWardWidget';
+export { default as AdmissionTrendWidget } from './AdmissionTrendWidget';
+export { default as PatientFlowWidget } from './PatientFlowWidget';
+export { default as InfectionWidget } from './InfectionWidget';
+export { default as StaffExposureWidget } from './StaffExposureWidget';
+export { default as IsolationWidget } from './IsolationWidget';
+export { default as SafetyIncidentsWidget } from './SafetyIncidentsWidget';
+export { default as EwsHighRiskWidget } from './EwsHighRiskWidget';
+export { default as QiDashboardWidget } from './QiDashboardWidget';
+export { default as SatisfactionWidget } from './SatisfactionWidget';
+export { default as ChartHourlyWidget } from './ChartHourlyWidget';
+export { default as ChartWeeklyWidget } from './ChartWeeklyWidget';
+export { default as ChartDeptWidget } from './ChartDeptWidget';
+export { default as ChartBedsWidget } from './ChartBedsWidget';
+export { default as ChartTopDxWidget } from './ChartTopDxWidget';
+export { default as ChartInfectionWidget } from './ChartInfectionWidget';
+export { default as NotificationsWidget } from './NotificationsWidget';
+export { default as SystemHealthWidget } from './SystemHealthWidget';

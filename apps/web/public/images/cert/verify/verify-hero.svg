@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- Background subtle gradient -->
+  <rect width="400" height="300" rx="12" fill="#F8FAFC"/>
+
+  <!-- Document -->
+  <rect x="130" y="50" width="140" height="180" rx="8" fill="white" stroke="#CBD5E1" stroke-width="2"/>
+  <rect x="130" y="50" width="140" height="36" rx="8" fill="#EFF6FF"/>
+  <rect x="130" y="78" width="140" height="8" rx="0" fill="#EFF6FF"/>
+
+  <!-- Document lines -->
+  <rect x="150" y="60" width="60" height="6" rx="3" fill="#93C5FD"/>
+  <rect x="150" y="100" width="100" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="150" y="114" width="90" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="150" y="128" width="95" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="150" y="142" width="80" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="150" y="162" width="100" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="150" y="176" width="70" height="4" rx="2" fill="#E2E8F0"/>
+  <rect x="150" y="196" width="60" height="4" rx="2" fill="#E2E8F0"/>
+
+  <!-- Shield -->
+  <g transform="translate(240, 140)">
+    <path d="M0-40 L30-28 L30 5 Q30 30 0 45 Q-30 30-30 5 L-30-28Z" fill="#3B82F6"/>
+    <path d="M0-32 L24-22 L24 4 Q24 24 0 36 Q-24 24-24 4 L-24-22Z" fill="#60A5FA"/>
+    <!-- Checkmark -->
+    <path d="M-12 2 L-4 10 L14-8" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Decorative dots -->
+  <circle cx="80" cy="80" r="4" fill="#DBEAFE"/>
+  <circle cx="60" cy="140" r="6" fill="#BFDBFE"/>
+  <circle cx="90" cy="200" r="3" fill="#DBEAFE"/>
+  <circle cx="340" cy="90" r="5" fill="#DBEAFE"/>
+  <circle cx="320" cy="220" r="4" fill="#BFDBFE"/>
+  <circle cx="350" cy="160" r="3" fill="#DBEAFE"/>
+
+  <!-- Bottom text area -->
+  <text x="200" y="268" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#3B82F6">Secure Document Verification</text>
+  <text x="200" y="286" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#94A3B8">Blockchain-powered integrity check</text>
+</svg>

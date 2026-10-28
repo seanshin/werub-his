@@ -1,0 +1,56 @@
+/* 문서 충실도 — 화면 미리보기 + 인쇄 공통 스타일 (설계 §4·§12.5)
+   .doc-* 스코프 한정. globals.css에서 import. */
+
+/* ── A4 캔버스 (화면=인쇄 동일 규격) ── */
+.doc-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 15mm 14mm;
+  margin: 0 auto;
+  background: #fff;
+  color: #111;
+  box-sizing: border-box;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+}
+.doc-page + .doc-page { margin-top: 8mm; }
+
+/* 화면 미리보기: 페이지처럼 보이게 음영 + 회색 배경 */
+.doc-screen { background: #e5e7eb; padding: 16px; overflow: auto; }
+.doc-screen .doc-page { box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+
+/* 표 양식 */
+.doc-page table { width: 100%; border-collapse: collapse; }
+.doc-page th, .doc-page td { border: 1px solid #333; padding: 3px 6px; vertical-align: top; }
+.doc-row { break-inside: avoid; }
+
+/* 워터마크 */
+.doc-watermark {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 64pt; color: rgba(220,38,38,.12); transform: rotate(-30deg);
+  pointer-events: none; font-weight: 800; letter-spacing: 8px;
+}
+.doc-page { position: relative; }
+
+/* 인쇄 전용 루트(Portal) — 화면에선 숨김 */
+.doc-print-root { display: none; }
+
+/* ── 인쇄 ── */
+@media print {
+  /* 🔴 (2026-10-12) 인쇄 전용 루트가 **있을 때만** 나머지를 숨긴다 — 종전엔 조건 없이 걸려 루트를 쓰지 않는
+     인쇄 버튼 12곳(결정 대장·결정 문서·근무표·QI 보고서 등)이 전부 빈 종이(워터마크만)로 나왔다.
+     워터마크(PrintGuard)는 책임 추적이라 남긴다. */
+  body:has(> .doc-print-root) > *:not(.doc-print-root):not(.print-watermark) { display: none !important; }  /* 앱 크롬 제거(visibility보다 견고) */
+  .doc-print-root { display: block; }
+  .doc-screen { display: none !important; }                     /* 화면 미리보기 사본 숨김 */
+  .doc-no-print { display: none !important; }
+  [data-portal], [data-radix-portal], .toast, [role="dialog"] { display: none !important; }
+
+  .doc-page { box-shadow: none; margin: 0 auto; page-break-after: always; }
+  .doc-page:last-child { page-break-after: auto; }
+  tr, .doc-row { break-inside: avoid; }
+  thead { display: table-header-group; }
+  .doc-stamp, .doc-watermark, .doc-page { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+@page { size: A4; margin: 0; }  /* 여백은 .doc-page padding으로 제어(화면=인쇄 일치) */

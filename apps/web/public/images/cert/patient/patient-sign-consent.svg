@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" fill="none">
+  <rect width="200" height="150" rx="10" fill="#F8FAFC"/>
+
+  <!-- Document -->
+  <rect x="40" y="15" width="120" height="105" rx="6" fill="white" stroke="#E2E8F0" stroke-width="1.5"/>
+
+  <!-- Medical cross in corner -->
+  <g transform="translate(140, 28)">
+    <rect x="-5" y="-2" width="10" height="4" rx="1" fill="#EF4444" opacity="0.7"/>
+    <rect x="-2" y="-5" width="4" height="10" rx="1" fill="#EF4444" opacity="0.7"/>
+  </g>
+
+  <!-- Document header -->
+  <rect x="52" y="25" width="50" height="4" rx="2" fill="#CBD5E1"/>
+
+  <!-- Checkbox items -->
+  <rect x="52" y="40" width="10" height="10" rx="2" fill="#3B82F6"/>
+  <path d="M54 45 L56 47 L60 43" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="68" y="42" width="60" height="3" rx="1.5" fill="#E2E8F0"/>
+
+  <rect x="52" y="56" width="10" height="10" rx="2" fill="#3B82F6"/>
+  <path d="M54 61 L56 63 L60 59" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="68" y="58" width="55" height="3" rx="1.5" fill="#E2E8F0"/>
+
+  <rect x="52" y="72" width="10" height="10" rx="2" fill="white" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="68" y="74" width="50" height="3" rx="1.5" fill="#E2E8F0"/>
+
+  <!-- Signature area -->
+  <rect x="52" y="90" width="96" height="22" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1" stroke-dasharray="3 2"/>
+  <!-- Signature scribble -->
+  <path d="M60 104 Q68 94 76 102 Q84 110 92 98 Q98 92 106 100 Q112 104 120 98" stroke="#1E40AF" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Finger/stylus touch point -->
+  <circle cx="120" cy="98" r="6" fill="#3B82F6" opacity="0.3"/>
+  <circle cx="120" cy="98" r="3" fill="#3B82F6" opacity="0.6"/>
+</svg>

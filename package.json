@@ -1,0 +1,31 @@
+{
+  "name": "hospital-run",
+  "version": "4.130.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "db:migrate": "npm run migrate --workspace=apps/api",
+    "db:seed": "npm run seed --workspace=apps/api",
+    "docker:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "sync:cms-style": "node scripts/sync-cms-style.mjs",
+    "alert:emitters": "node scripts/alert-emitters.mjs",
+    "gen:mobile-openapi": "node scripts/gen-mobile-openapi.js"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=22.0.0 <23.0.0"
+  },
+  "packageManager": "npm@10.8.0"
+}

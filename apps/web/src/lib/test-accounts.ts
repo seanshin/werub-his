@@ -1,0 +1,137 @@
+// 테스트 계정 데이터 (개발용) — /login·/staff/login 공용
+export const TEST_PASSWORD = 'staff1234!';
+
+export const ACCOUNT_TABS = [
+  {
+    key: 'main', label: '기본',
+    accounts: [
+      { label: '관리자', email: 'admin@hospital.example.org', color: 'blue' },
+      { label: '간호사', email: 'cho.ganho@hospital.example.org', color: 'pink' },
+      { label: '약사', email: 'lim.yaksa@hospital.example.org', color: 'orange' },
+      { label: '검사', email: 'ws.hematology@hospital.example.org', color: 'purple' },
+    ],
+  },
+  {
+    key: 'nurse', label: '간호사',
+    accounts: [
+      { label: '내과병동', email: 'cho.ganho@hospital.example.org', color: 'pink' },
+      { label: '외과병동', email: 'yoon.ganho@hospital.example.org', color: 'pink' },
+      { label: '응급실', email: 'hwang.ganho@hospital.example.org', color: 'pink' },
+      { label: '소아병동', email: 'seo.ganho@hospital.example.org', color: 'pink' },
+      { label: 'ICU', email: 'kim.icu@hospital.example.org', color: 'pink' },
+      { label: '수술실', email: 'lee.or@hospital.example.org', color: 'pink' },
+      { label: '산부인과', email: 'park.obgyn@hospital.example.org', color: 'pink' },
+      { label: '정형외과', email: 'choi.ortho@hospital.example.org', color: 'pink' },
+      { label: '투석실', email: 'kang.dialysis@hospital.example.org', color: 'pink' },
+      { label: '혈액은행', email: 'han.blood@hospital.example.org', color: 'pink' },
+      { label: '재활병동', email: 'shin.rehab@hospital.example.org', color: 'pink' },
+      { label: '감염관리', email: 'na.infection@hospital.example.org', color: 'pink' },
+    ],
+  },
+  {
+    key: 'doctor', label: '의사',
+    accounts: [
+      { label: '내과(순환기)', email: 'kim.naegwa@hospital.example.org', color: 'indigo' },
+      { label: '내과(호흡기)', email: 'park.naegwa@hospital.example.org', color: 'indigo' },
+      { label: '내과(소화기)', email: 'test.sowhagi@hospital.example.org', color: 'indigo' },
+      { label: '외과(일반)', email: 'lee.oegwa@hospital.example.org', color: 'indigo' },
+      { label: '외과(흉부)', email: 'choi.oegwa@hospital.example.org', color: 'indigo' },
+      { label: '정형외과', email: 'oh.jeonghyung@hospital.example.org', color: 'indigo' },
+      { label: '소아청소년과', email: 'jung.soaa@hospital.example.org', color: 'indigo' },
+      { label: '산부인과', email: 'han.sanbu@hospital.example.org', color: 'indigo' },
+      { label: '치과', email: 'test.dental@hospital.example.org', color: 'indigo' },
+      { label: '안과', email: 'test.angwa@hospital.example.org', color: 'indigo' },
+      { label: '이비인후과', email: 'test.ibiin@hospital.example.org', color: 'indigo' },
+      { label: '피부과', email: 'test.pibu@hospital.example.org', color: 'indigo' },
+      { label: '응급의학과', email: 'kang.eunggup@hospital.example.org', color: 'indigo' },
+      { label: '영상의학과', email: 'test.yeongsang@hospital.example.org', color: 'indigo' },
+    ],
+  },
+  {
+    key: 'exec', label: '경영/행정',
+    accounts: [
+      { label: '병원장', email: 'hong.director@hospital.example.org', color: 'rose' },
+      { label: '이사장', email: 'kim.ceo@hospital.example.org', color: 'rose' },
+      { label: '의료원장', email: 'park.cmo@hospital.example.org', color: 'rose' },
+      { label: '원무과', email: 'lee.wonmu@hospital.example.org', color: 'amber' },
+      { label: '행정과', email: 'park.haengjeong@hospital.example.org', color: 'amber' },
+      { label: '급양과', email: 'kim.geupyang@hospital.example.org', color: 'amber' },
+      { label: '의무기록과', email: 'choi.uimu@hospital.example.org', color: 'amber' },
+    ],
+  },
+  {
+    key: 'crm', label: 'CRM',
+    accounts: [
+      { label: 'CRM 팀장', email: 'crm.manager@hospital.example.org', color: 'emerald' },
+      { label: '검진 CRM', email: 'crm.checkup@hospital.example.org', color: 'emerald' },
+      { label: '해외환자 CRM', email: 'crm.intl@hospital.example.org', color: 'emerald' },
+      { label: '캠페인 담당', email: 'crm.campaign@hospital.example.org', color: 'emerald' },
+    ],
+  },
+  {
+    key: 'checkup', label: '검진센터',
+    accounts: [
+      { label: '검진 의사', email: 'ck.doctor@hospital.example.org', color: 'teal' },
+      { label: '검진 간호사', email: 'ck.nurse@hospital.example.org', color: 'teal' },
+      { label: '검진 원무', email: 'ck.admin@hospital.example.org', color: 'teal' },
+      { label: '검진 행정', email: 'ck.office@hospital.example.org', color: 'teal' },
+      { label: '채혈실', email: 'ck.blood@hospital.example.org', color: 'pink' },
+      { label: 'X-ray실', email: 'ck.xray@hospital.example.org', color: 'blue' },
+      { label: '초음파실', email: 'ck.ultrasound@hospital.example.org', color: 'indigo' },
+      { label: '심전도실', email: 'ck.ecg@hospital.example.org', color: 'pink' },
+      { label: '신체계측실', email: 'ck.physical@hospital.example.org', color: 'teal' },
+      { label: '내시경실', email: 'ck.endoscopy@hospital.example.org', color: 'purple' },
+    ],
+  },
+  {
+    key: 'workstation', label: '워크스테이션',
+    accounts: [
+      { label: '채혈실', email: 'ws.phlebotomy@hospital.example.org', color: 'pink' },
+      { label: '혈액검사', email: 'ws.hematology@hospital.example.org', color: 'blue' },
+      { label: '생화학', email: 'ws.chemistry@hospital.example.org', color: 'blue' },
+      { label: '소변검사', email: 'ws.urinalysis@hospital.example.org', color: 'blue' },
+      { label: 'X-ray', email: 'ws.xray@hospital.example.org', color: 'indigo' },
+      { label: 'CT', email: 'ws.ct@hospital.example.org', color: 'indigo' },
+      { label: 'MRI', email: 'ws.mri@hospital.example.org', color: 'indigo' },
+      { label: '초음파', email: 'ws.ultrasound@hospital.example.org', color: 'indigo' },
+      { label: '심전도', email: 'ws.ecg@hospital.example.org', color: 'amber' },
+      { label: '폐기능', email: 'ws.pft@hospital.example.org', color: 'amber' },
+      { label: '내시경', email: 'ws.endoscopy@hospital.example.org', color: 'amber' },
+      { label: '판독의', email: 'ws.reading@hospital.example.org', color: 'purple' },
+      { label: '물리치료', email: 'tx.pt@hospital.example.org', color: 'teal' },
+      { label: '투석간호', email: 'tx.dialysis@hospital.example.org', color: 'teal' },
+      { label: '항암간호', email: 'tx.chemo@hospital.example.org', color: 'teal' },
+      { label: '방사선', email: 'tx.radiation@hospital.example.org', color: 'teal' },
+    ],
+  },
+  {
+    key: 'consult', label: '상담',
+    accounts: [
+      { label: '일반 팀장', email: 'consult.general.lead@hospital.example.org', color: 'emerald' },
+      { label: '일반 상담1', email: 'consult.general1@hospital.example.org', color: 'emerald' },
+      { label: '일반 상담2', email: 'consult.general2@hospital.example.org', color: 'emerald' },
+      { label: '국제 팀장', email: 'consult.intl.lead@hospital.example.org', color: 'teal' },
+      { label: '국제 상담1', email: 'consult.intl1@hospital.example.org', color: 'teal' },
+      { label: '국제 상담2', email: 'consult.intl2@hospital.example.org', color: 'teal' },
+      { label: '검진 팀장', email: 'consult.checkup.lead@hospital.example.org', color: 'blue' },
+      { label: '검진 상담1', email: 'consult.checkup1@hospital.example.org', color: 'blue' },
+      { label: '검진 상담2', email: 'consult.checkup2@hospital.example.org', color: 'blue' },
+      { label: '수납 팀장', email: 'consult.billing.lead@hospital.example.org', color: 'amber' },
+      { label: '수납 상담1', email: 'consult.billing1@hospital.example.org', color: 'amber' },
+      { label: '수납 상담2', email: 'consult.billing2@hospital.example.org', color: 'amber' },
+    ],
+  },
+] as const;
+
+export const DOT_COLORS: Record<string, string> = {
+  blue: 'bg-blue-400', pink: 'bg-pink-400', orange: 'bg-orange-400', purple: 'bg-purple-400',
+  indigo: 'bg-indigo-400', rose: 'bg-rose-400', amber: 'bg-amber-400', teal: 'bg-teal-400',
+  emerald: 'bg-emerald-400',
+};
+export const HOVER_COLORS: Record<string, string> = {
+  blue: 'hover:bg-blue-50 hover:border-blue-200', pink: 'hover:bg-pink-50 hover:border-pink-200',
+  orange: 'hover:bg-orange-50 hover:border-orange-200', purple: 'hover:bg-purple-50 hover:border-purple-200',
+  indigo: 'hover:bg-indigo-50 hover:border-indigo-200', rose: 'hover:bg-rose-50 hover:border-rose-200',
+  amber: 'hover:bg-amber-50 hover:border-amber-200', teal: 'hover:bg-teal-50 hover:border-teal-200',
+  emerald: 'hover:bg-emerald-50 hover:border-emerald-200',
+};

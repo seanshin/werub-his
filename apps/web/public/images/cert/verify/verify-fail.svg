@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Outer glow -->
+  <circle cx="60" cy="60" r="56" fill="#FEF2F2"/>
+  <!-- Main circle -->
+  <circle cx="60" cy="60" r="48" fill="#EF4444"/>
+  <!-- Inner highlight -->
+  <circle cx="60" cy="60" r="42" fill="#F87171"/>
+  <!-- X mark -->
+  <path d="M42 42 L78 78" stroke="white" stroke-width="7" stroke-linecap="round"/>
+  <path d="M78 42 L42 78" stroke="white" stroke-width="7" stroke-linecap="round"/>
+  <!-- Warning triangle -->
+  <g transform="translate(85, 25) scale(0.45)">
+    <path d="M0-20 L18 14 L-18 14Z" fill="white" opacity="0.9" stroke="none"/>
+    <rect x="-2" y="-10" width="4" height="12" rx="2" fill="#EF4444"/>
+    <circle cx="0" cy="8" r="2.5" fill="#EF4444"/>
+  </g>
+</svg>

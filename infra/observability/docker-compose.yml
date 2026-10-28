@@ -1,0 +1,40 @@
+# 디지털 트윈/HIS 관측성 스택 (격리) — openpacs/jitsi prometheus와 무관
+# twin_twin-net에 붙어 twin-api:8200 스크레이프. 실배포(pm2)와 독립.
+services:
+  his-prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: his-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+      - his-prom-data:/prometheus
+    ports:
+      - "127.0.0.1:9093:9090"
+    networks: [twin-net]
+
+  his-grafana:
+    image: grafana/grafana:11.2.0
+    container_name: his-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - his-grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3304:3000"
+    networks: [twin-net]
+    depends_on: [his-prometheus]
+
+volumes:
+  his-prom-data:
+  his-grafana-data:
+
+networks:
+  twin-net:
+    external: true
+    name: twin_twin-net

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospital RUN — 외부 연동 스펙</title>
+<style>
+  :root{
+    --ground:#eef2f5;--surface:#fff;--surface-2:#f6f8fa;--border:#d9e0e7;--border-strong:#c2ccd6;
+    --ink:#17222e;--ink-soft:#35485a;--muted:#61717f;--faint:#8a97a3;
+    --accent:#0d7d8a;--accent-ink:#0a5d67;--accent-wash:#e2f0f2;--blue:#1f5f9e;--blue-wash:#e6eef7;
+    --good:#2c8a5b;--good-wash:#e2f1e9;--warn:#b5730d;--warn-wash:#f6ecd8;--crit:#c0392b;--crit-wash:#f7e3e0;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic","Segoe UI",Roboto,sans-serif;
+    --font-mono:"SF Mono","JetBrains Mono","D2Coding",ui-monospace,Menlo,Consolas,monospace;
+    --radius:10px;--radius-sm:6px;--shadow:0 1px 2px rgba(23,34,46,.04),0 4px 16px rgba(23,34,46,.06);--maxw:880px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --ground:#0b1017;--surface:#131c26;--surface-2:#0f1720;--border:#223140;--border-strong:#2f4356;
+    --ink:#e7edf3;--ink-soft:#b9c6d2;--muted:#8b9aa8;--faint:#6a7a88;
+    --accent:#38b6c3;--accent-ink:#6fd2dc;--accent-wash:#123037;--blue:#5b9bd8;--blue-wash:#14263a;
+    --good:#4bb37e;--good-wash:#12291f;--warn:#d69a3c;--warn-wash:#2e2413;--crit:#e0685a;--crit-wash:#2e1815;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 18px rgba(0,0,0,.35);}}
+  :root[data-theme="light"]{--ground:#eef2f5;--surface:#fff;--surface-2:#f6f8fa;--border:#d9e0e7;--border-strong:#c2ccd6;--ink:#17222e;--ink-soft:#35485a;--muted:#61717f;--faint:#8a97a3;--accent:#0d7d8a;--accent-ink:#0a5d67;--accent-wash:#e2f0f2;--blue:#1f5f9e;--blue-wash:#e6eef7;--good:#2c8a5b;--good-wash:#e2f1e9;--warn:#b5730d;--warn-wash:#f6ecd8;--crit:#c0392b;--crit-wash:#f7e3e0;--shadow:0 1px 2px rgba(23,34,46,.04),0 4px 16px rgba(23,34,46,.06);}
+  :root[data-theme="dark"]{--ground:#0b1017;--surface:#131c26;--surface-2:#0f1720;--border:#223140;--border-strong:#2f4356;--ink:#e7edf3;--ink-soft:#b9c6d2;--muted:#8b9aa8;--faint:#6a7a88;--accent:#38b6c3;--accent-ink:#6fd2dc;--accent-wash:#123037;--blue:#5b9bd8;--blue-wash:#14263a;--good:#4bb37e;--good-wash:#12291f;--warn:#d69a3c;--warn-wash:#2e2413;--crit:#e0685a;--crit-wash:#2e1815;--shadow:0 1px 2px rgba(0,0,0,.3),0 4px 18px rgba(0,0,0,.35);}
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-sans);line-height:1.62;font-size:15.5px;-webkit-font-smoothing:antialiased;}
+  a{color:var(--accent-ink);text-decoration:none;}a:hover{text-decoration:underline;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px;}
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:11px 24px;background:color-mix(in srgb,var(--surface) 86%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
+  .topbar .mark{width:28px;height:28px;border-radius:8px;flex:none;background:linear-gradient(150deg,var(--accent),var(--blue));display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;}
+  .topbar .tt{font-weight:650;font-size:14px;letter-spacing:-.01em;}
+  .topbar .spacer{flex:1;}
+  .badge{font-family:var(--font-mono);font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--accent-wash);color:var(--accent-ink);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);}
+  .theme-btn{font:inherit;font-size:12.5px;cursor:pointer;padding:5px 11px;border-radius:20px;background:var(--surface-2);color:var(--ink-soft);border:1px solid var(--border);display:inline-flex;gap:6px;align-items:center;}
+  .theme-btn:hover{border-color:var(--border-strong);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:26px 26px 100px;}
+  .hero .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.14em;font-weight:700;color:var(--accent);}
+  h1{font-size:30px;line-height:1.14;letter-spacing:-.02em;margin:8px 0 8px;font-weight:780;text-wrap:balance;}
+  .lead{font-size:16px;color:var(--muted);margin:4px 0 8px;max-width:64ch;}
+  section{padding-top:26px;margin-top:18px;scroll-margin-top:60px;}
+  h2{font-size:21px;line-height:1.2;letter-spacing:-.02em;margin:6px 0 6px;font-weight:720;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  h2 .ix{font-family:var(--font-mono);font-size:13px;color:var(--accent);}
+  h3{font-size:14.5px;margin:18px 0 6px;font-weight:680;letter-spacing:-.01em;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);}
+  p{margin:9px 0;color:var(--ink-soft);}
+  strong{color:var(--ink);font-weight:650;}
+  code{font-family:var(--font-mono);font-size:.85em;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:.08em .38em;color:var(--ink-soft);}
+  ul{color:var(--ink-soft);padding-left:20px;margin:8px 0;}li{margin:5px 0;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);}
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);margin:18px 0 4px;}
+  .toc .th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:700;margin-bottom:8px;}
+  .toc ol{columns:2;column-gap:26px;margin:0;padding-left:18px;font-size:13.5px;}
+  @media (max-width:560px){.toc ol{columns:1;}}
+  .tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);margin:13px 0;}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:480px;}
+  th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{background:var(--surface-2);font-weight:650;color:var(--ink-soft);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:none;}tbody tr:hover td{background:color-mix(in srgb,var(--accent-wash) 40%,transparent);}
+  td code{white-space:nowrap;}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap;}
+  .pill.good{background:var(--good-wash);color:var(--good);border-color:color-mix(in srgb,var(--good) 28%,transparent);}
+  .pill.warn{background:var(--warn-wash);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 28%,transparent);}
+  .pill.crit{background:var(--crit-wash);color:var(--crit);border-color:color-mix(in srgb,var(--crit) 28%,transparent);}
+  .pill.blue{background:var(--blue-wash);color:var(--blue);border-color:color-mix(in srgb,var(--blue) 28%,transparent);}
+  .pill.off{background:var(--surface-2);color:var(--muted);border-color:var(--border);}
+  .note{border-left:3px solid var(--accent);background:var(--accent-wash);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:11px 15px;margin:13px 0;font-size:13px;color:var(--ink-soft);}
+  .note.warn{border-left-color:var(--warn);background:var(--warn-wash);}
+  .note.crit{border-left-color:var(--crit);background:var(--crit-wash);}
+  .note .h{font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px;color:var(--accent-ink);}
+  .note.warn .h{color:var(--warn);}.note.crit .h{color:var(--crit);}
+  .sys{margin:16px 0;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;}
+  .sys .sh{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+  .sys .sh .st{font-weight:720;font-size:17px;letter-spacing:-.01em;}
+  .sys .sh .sd{font-size:12.5px;color:var(--muted);}
+  .sys .sb{padding:6px 18px 16px;}
+  .kv{display:grid;grid-template-columns:120px 1fr;gap:2px 14px;font-size:13px;margin:12px 0;}
+  .kv dt{color:var(--faint);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding-top:3px;}
+  .kv dd{margin:0;color:var(--ink-soft);}
+  @media (max-width:560px){.kv{grid-template-columns:1fr;gap:1px;}.kv dt{margin-top:8px;}}
+  pre{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;line-height:1.55;color:var(--ink-soft);}
+  .foot{color:var(--faint);font-size:12px;margin-top:38px;padding-top:16px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="mark">HR</div>
+  <span class="tt">외부 연동 스펙</span>
+  <span class="spacer"></span>
+  <span class="badge">v3.97.0</span>
+  <button class="theme-btn" id="themeBtn" aria-label="테마 전환"><span id="themeIco">◐</span> 테마</button>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Integration Spec · 연동팀</div>
+    <h1>Hospital RUN 외부 연동 스펙</h1>
+    <p class="lead">HIS Core와 6개 외부 시스템(ERP · WeRU.B AI · OpenPACS · sign · NHIS/HIRA · Jitsi·FCM·Clinic) 간 인증·프로토콜·이벤트·게이트를 정리합니다. 각 시스템의 정본 핸드오프 문서는 <code>docs/05-reference/</code>에 있습니다.</p>
+  </div>
+
+  <div class="toc">
+    <div class="th">연동 시스템</div>
+    <ol>
+      <li><a href="#common">공통 규약</a></li>
+      <li><a href="#erp">ERP (재무 SoT)</a></li>
+      <li><a href="#ai">WeRU.B 의료 AI</a></li>
+      <li><a href="#pacs">OpenPACS</a></li>
+      <li><a href="#sign">sign (전자서명)</a></li>
+      <li><a href="#nhis">NHIS · HIRA</a></li>
+      <li><a href="#etc">Jitsi · FCM · Clinic</a></li>
+      <li><a href="#refs">참조 문서</a></li>
+    </ol>
+  </div>
+
+  <section id="common">
+    <h2><span class="ix">00</span> 공통 규약</h2>
+    <ul>
+      <li><strong>게이트 우선</strong> — 대부분의 연동은 config 플래그로 게이트되며 기본 비활성(시뮬/스텁) 상태에서 점진 활성화합니다.</li>
+      <li><strong>어댑터 패턴</strong> — 외부 연동은 시뮬레이션 ↔ 실연동을 <code>dev-simulation-registry</code>에서 토글합니다(NHIS·Clinic·심사·SMS·이메일 등).</li>
+      <li><strong>egress 보안</strong> — 외부 호출은 공용 <code>safeFetch</code>/<code>assertEgressUrl</code>로 사설·loopback·메타데이터 IP 차단 및 리다이렉트 재검증(SSRF 방지).</li>
+      <li><strong>PHI 최소화</strong> — 외부(특히 AI) 전송 시 환자 식별정보 비식별(<code>[환자명]</code> 후치환)·페이로드 크기 가드.</li>
+      <li><strong>outbox</strong> — 이벤트 발행은 <code>integration_outbox</code>(timestamptz) 기반, 소비자 재-pull.</li>
+    </ul>
+  </section>
+
+  <section id="erp">
+    <h2><span class="ix">01</span> ERP <span class="pill good">운영</span></h2>
+    <div class="sys">
+      <div class="sh"><div><div class="st">ERP (infra-core)</div><div class="sd">진료비 책정·계산의 System of Record</div></div></div>
+      <div class="sb">
+        <dl class="kv">
+          <dt>역할</dt><dd>진료비 <strong>SoT</strong>. HIS는 진료라인을 발행하고 invoice를 소비 (D-6 인터페이스 계약)</dd>
+          <dt>방향</dt><dd>양방향 (HIS ↔ ERP)</dd>
+          <dt>인증</dt><dd>SSO(<code>aud</code>/<code>jti</code> 검증) · 웹훅 <strong>HMAC</strong>(rawBody 서명) · PII 조회는 <code>piiReadKey</code> 분리(폭발반경 축소)</dd>
+          <dt>주요 이벤트</dt><dd><code>billing.line_recorded</code>(HIS→ERP) · invoice 소비 · <code>sign.completed</code> → ERP 발행 origination</dd>
+          <dt>전송</dt><dd>outbox 패턴 · nginx <code>/erp</code> 프록시 · SSO 토큰 핸드오프(ErpLauncher, ADMIN)</dd>
+        </dl>
+        <div class="note"><span class="h">계약 원칙 (D-6)</span>ERP가 수가·계산의 SoT입니다. HIS는 <code>billing.line_recorded</code>를 발행할 뿐 금액을 확정하지 않습니다. 자격 필드·상병은 payload에 동봉. 이벤트 카탈로그는 <code>his-erp-event-catalog-v1.md</code>.</div>
+        <div class="note warn"><span class="h">보안 강화 (S-1/2/3)</span>S-1 PII 조회 <code>piiReadKey</code> 분리 완료 · S-2 웹훅 HMAC · S-3 IDOR 방지. 통합 키는 폭발반경 최소화 방향.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ai">
+    <h2><span class="ix">02</span> WeRU.B 의료 AI <span class="pill good">운영</span></h2>
+    <div class="sys">
+      <div class="sh"><div><div class="st">WeRU.B — Medical AI Server</div><div class="sd">v2.121.0 · STT · 화자분리 · NER+SOAP · FHIR · Medical Law · 아바타</div></div></div>
+      <div class="sb">
+        <dl class="kv">
+          <dt>연동 모듈</dt><dd><code>medical-ai</code> (HIS 측 92 AI 엔드포인트)</dd>
+          <dt>인증</dt><dd><strong>Bearer gpuKey</strong>(<code>sk-</code> 키) — <code>ai.server.gpuKey</code>/env <code>GPU_API_KEY</code>. notice/DUR EP는 Bearer만 인정(X-Medical-Key 불인정)</dd>
+          <dt>config</dt><dd><code>ai.server.url</code> · <code>ai.server.apiKey</code> · <code>ai.server.gpuKey</code> · <code>ai.server.enabled</code>(kill-switch→503) · <code>ai.server.timeout</code></dd>
+          <dt>기능군</dt><dd>실시간 감별진단 · 약물대체/DUR(가격·8종 동기화) · SOAP 초안 · 검사/영상 해석 · 간호 NANDA · 응급 트리아지 재평가 · Medical Law · 아바타</dd>
+          <dt>PHI</dt><dd>비식별 <code>[환자명]</code> 후치환 · 100KB 페이로드 가드(400) · patient-context 감사</dd>
+          <dt>프록시</dt><dd>ollama NDJSON 스트림 병합 · Python UA 403 주의 · 장시간 작업은 비동기 잡(nginx 60s 타임아웃 회피)</dd>
+        </dl>
+        <div class="note warn"><span class="h">앰비언트 스크라이브 (BACKLOG)</span>녹음→STT→화자분리→SOAP 초안 파이프라인은 배선·배포 완료됐으나, <strong>STT GPU 자원(large-v3+diarize CUDA OOM)</strong>으로 대기 중. 재개 트리거는 AI팀 GPU 자원 확보. 연동 요청서 <code>werub-scribe-integration-request-20260707.md</code>.</div>
+        <div class="note"><span class="h">정본 가이드</span><code>docs/05-reference/MEDICAL_AI_INTEGRATION_v2.121.0.md</code></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pacs">
+    <h2><span class="ix">03</span> OpenPACS <span class="pill good">운영</span></h2>
+    <div class="sys">
+      <div class="sh"><div><div class="st">OpenPACS</div><div class="sd">DICOM 영상 — Orthanc · OHIF · FastAPI · <strong>별도 저장소</strong></div></div></div>
+      <div class="sb">
+        <dl class="kv">
+          <dt>저장소</dt><dd><a href="https://github.com/seanshin/openpacs">github.com/seanshin/openpacs</a> (HospitalRUN과 분리)</dd>
+          <dt>포트</dt><dd>OHIF 3001 · Orthanc 8042 · FastAPI 8001 · DICOM 4242</dd>
+          <dt>연동</dt><dd>HIS는 프론트에서 <code>/pacs/</code> URL로 <strong>링크만</strong> 제공 (pacs-proxy)</dd>
+          <dt>nginx 경로</dt><dd><code>/pacs-api/</code> · <code>/dicom-web/</code> · <code>/wado</code> · <code>/pacs/</code> · <code>/viewer/</code></dd>
+          <dt>SSO</dt><dd>PACS SSO <code>aud=pacs</code> 분리 · PatientID 매칭</dd>
+        </dl>
+        <div class="note crit"><span class="h">수정 금지</span><code>docker-compose.yml</code>의 orthanc/ohif/backend, 위 nginx 경로, PostgreSQL <code>openpacs</code> DB는 <strong>수정·삭제 금지</strong>. <code>hospital</code>/<code>secret</code> DB 비밀번호는 OpenPACS와 공유하므로 변경 금지. 전체 <code>docker compose restart</code> 금지 — 개별 지정.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sign">
+    <h2><span class="ix">04</span> sign — 전자서명 <span class="pill good">운영 (EXTERNAL)</span></h2>
+    <div class="sys">
+      <div class="sh"><div><div class="st">sign (외부 전자서명 서비스)</div><div class="sd">CMS/PAdES 서명코어 · HSM 키수탁</div></div></div>
+      <div class="sb">
+        <dl class="kv">
+          <dt>연동 모듈</dt><dd><code>sign-integration</code> · <code>document-sign</code></dd>
+          <dt>모드</dt><dd><code>sign.mode</code> = <strong>EXTERNAL 풀전환 운영</strong>(v3.85~) · 오더 서명 로그(<code>his-orders</code>)·거버넌스 의사록/의결 봉인(<code>his-governance</code>) 해시체인+TSA 앵커</dd>
+          <dt>현행 상태</dt><dd>운영 — CPOE 5행위 sign 봉인·판독의 SSO(<code>aud=sign</code>)·PACS <code>aud=pacs</code> 분리·audit-events 체인 verify(valid) 실측</dd>
+          <dt>키 수탁</dt><dd>HIS는 인증서 개인키 미보관. HSM 키 수탁(<code>KeyCustodyProvider</code> 추상화) · 자체발급 폐지 방향(<code>selfIssuanceEnabled=false</code> 목표)</dd>
+          <dt>판독의 SSO</dt><dd><code>aud=sign</code> · JWKS RS256</dd>
+          <dt>e-sign #6</dt><dd><code>sign.completed</code> → ERP 발행 · 완료본 토큰 다운로드(HMAC·24h) · 다자서명 relay</dd>
+        </dl>
+        <div class="note"><span class="h">봉인 스트림</span>오더=<code>his-orders</code> · 위원회 의사록/의결=<code>his-governance</code>(v3.89·sha256만 전송·PHI 미전송). HSM 키 수탁·자체발급 폐지는 법무 게이트 지속.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="nhis">
+    <h2><span class="ix">05</span> NHIS · HIRA <span class="pill blue">어댑터</span></h2>
+    <div class="sys">
+      <div class="sh"><div><div class="st">NHIS(공단) · HIRA(심평원)</div><div class="sd">자격조회 · EDI 청구 · 약가 · 상병 표준</div></div></div>
+      <div class="sb">
+        <dl class="kv">
+          <dt>연동 모듈</dt><dd><code>eligibility</code> · <code>hira-edi</code> · <code>claim</code> · <code>insurance-claim</code> · <code>code-master</code></dd>
+          <dt>자격조회</dt><dd>공단 자격검증(시뮬→실연동 어댑터) + 본인확인 · copay 자격 전환(차상위 14·입원 20)</dd>
+          <dt>청구</dt><dd>HIRA EDI 수가코드 매핑 · 비급여 판정 · 상한제</dd>
+          <dt>마스터</dt><dd>의약품 24,022(약가 21,981·HIRA 급여상한금액표) · KCD-8 상병 18,184(성별 X=여/Y=남)</dd>
+        </dl>
+        <div class="note"><span class="h">전환</span>실연동 전환은 <code>dev-simulation-production-switchover.md</code> 절차에 따라 어댑터를 실서비스로 스위치.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="etc">
+    <h2><span class="ix">06</span> Jitsi · FCM · Clinic <span class="pill good">운영</span></h2>
+    <div class="tw"><table>
+      <thead><tr><th>시스템</th><th>역할</th><th>연동</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Jitsi</strong></td><td>원격진료 화상(self-hosted, hospital-jitsi 별도 프로젝트)</td><td><code>his.example.org:8443</code> · JWT(의사=모더레이터·환자=게스트) · Jibri 녹화(동의)</td></tr>
+        <tr><td><strong>FCM</strong></td><td>모바일 푸시 알림</td><td>딥링크 7경로 · 설정 화면 · <code>fcm-push-activation-runbook.md</code></td></tr>
+        <tr><td><strong>Clinic</strong></td><td>의원(clinic) 연동 — 층/일정</td><td><code>clinic-integration</code> · floor API · schedule · <code>CLINIC-HIS-API-REFERENCE.md</code></td></tr>
+        <tr><td><strong>Blockchain</strong></td><td>의료증명서·건강검진권 앵커링</td><td><code>blockchain-anchor</code> cron · eventHash=stableStringify · 외국인 검진권 §27</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="refs">
+    <h2><span class="ix">07</span> 참조 문서 (<code>docs/05-reference/</code>)</h2>
+    <div class="tw"><table>
+      <thead><tr><th>시스템</th><th>정본 문서</th></tr></thead>
+      <tbody>
+        <tr><td>ERP</td><td><code>his-erp-event-catalog-v1.md</code> · <code>his-erp-integration-auth-hardening.md</code> · <code>erp-*-response.md</code></td></tr>
+        <tr><td>WeRU.B AI</td><td><code>MEDICAL_AI_INTEGRATION_v2.121.0.md</code> · <code>werub-scribe-integration-request-20260707.md</code></td></tr>
+        <tr><td>PACS</td><td><code>PACS-SEPARATION.md</code> · <code>PACS-SSO-INTEGRATION-SPEC.md</code></td></tr>
+        <tr><td>sign</td><td><code>his-to-sign-*.md</code> · <code>sign-radiologist-sso-handoff.md</code> · <code>his-esign6-handoff-summary.md</code></td></tr>
+        <tr><td>NHIS/HIRA</td><td><code>hira-drug-standard-code-master.md</code> · <code>dev-simulation-production-switchover.md</code></td></tr>
+        <tr><td>Clinic</td><td><code>CLINIC-HIS-API-REFERENCE.md</code> · <code>CLINIC-HIS-INTEGRATION-v1.1.0.md</code> · <code>clinic-integration-api-spec.md</code></td></tr>
+        <tr><td>공통</td><td><code>go-live-checklist-security.md</code> · <code>API-REFERENCE.md</code> · <code>FHIR-R4-INTEGRATION-GUIDE.md</code></td></tr>
+      </tbody>
+    </table></div>
+    <div class="foot">
+      Hospital RUN 외부 연동 스펙 · v3.97.0 · 실측 기준 2026-08-10 · <code>his.example.org</code><br>
+      상태 표기는 코드베이스 실측 기준입니다(sign=EXTERNAL 풀전환 운영·해시체인 봉인 his-orders/his-governance). 관련 문서: 아키텍처 &amp; 문서 허브 · 운영 매뉴얼
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement,b=document.getElementById('themeBtn'),i=document.getElementById('themeIco');
+  b.addEventListener('click',function(){
+    var c=root.getAttribute('data-theme');
+    if(!c)c=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    var n=c==='dark'?'light':'dark';root.setAttribute('data-theme',n);i.textContent=n==='dark'?'☾':'☀';
+  });
+})();
+</script>
+
+</body>
+</html>

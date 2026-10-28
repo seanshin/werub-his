@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Outer glow -->
+  <circle cx="60" cy="60" r="56" fill="#FFF7ED"/>
+  <!-- Main circle -->
+  <circle cx="60" cy="60" r="48" fill="#F97316"/>
+  <!-- Inner highlight -->
+  <circle cx="60" cy="60" r="42" fill="#FB923C"/>
+  <!-- Broken shield - left half -->
+  <path d="M48 38 L60 32 L60 62 Q60 74 48 80 Q36 74 36 62 L36 38Z" fill="white" opacity="0.9"/>
+  <!-- Broken shield - right half (offset/cracked) -->
+  <path d="M64 40 L76 34 L76 58 Q76 70 64 76 Q60 74 60 68 L60 34Z" fill="white" opacity="0.7"/>
+  <!-- Crack line -->
+  <path d="M60 32 L62 44 L58 52 L63 60 L60 72" stroke="#F97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Warning exclamation -->
+  <rect x="55" y="42" width="4" height="14" rx="2" fill="#F97316"/>
+  <circle cx="57" cy="62" r="2.5" fill="#F97316"/>
+</svg>

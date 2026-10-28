@@ -1,0 +1,30 @@
+-- 2026-10-20 v4.98.0 — 결정 등록부 배치 10-J(환자 포털 공개 범위 · 포털 세련화 P3 B2·B4·B6·B8) 개발 시드 기록
+-- seed.ts DECISION_DEV_SEEDS 와 같은 값 · 🔴 실결정 아님(DEV-SEED) · 없을 때만 넣는다(사람이 기록했으면 건드리지 않는다)
+-- 🔴 네 선택은 2026-10-20 사용자 지시로 이미 코드에 구현됐다(판정표 "시드대로 구현됨") — 실결정이 다르면 결정 엔진이 되돌림 필요를 남긴다
+-- 적용: deploy.sh --backup 뒤 · 한 트랜잭션
+BEGIN;
+INSERT INTO system_configs (id, key, value, category, label, updated_by, created_at, updated_at)
+SELECT gen_random_uuid(), 'decision.portal.visitSummaryScope', replace('{"choice":"GENERAL","legalReviewRef":"개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)","authorityClaim":"개발 시드(DEV-SEED) — 위원회 의결 미검증","note":"실결정 아님 — 위원회 안건(/admin/gld)으로 의결해 다시 기록해야 결정으로 센다 · 시드 선택 이유: 2026-10-20 사용자 지시 — 진료 후 요약은 일반 수준(진단명·처방·다음 예약·일반 안내)","decidedByUserId":"__ADMIN__","decidedAt":"2026-10-10T03:00:00.000Z","applied":false,"appliedDetail":"이 선택은 아무것도 바꾸지 않는다"}', '__ADMIN__', coalesce((SELECT id::text FROM users WHERE email = 'admin@hospital.example.org'), ''))::jsonb, 'general', 'decision.portal.visitSummaryScope', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM system_configs WHERE key = 'decision.portal.visitSummaryScope');
+INSERT INTO decision_log_entries (id, decision_key, kind, choice, basis_ref, authority_claim, actor_user_id, detail, occurred_at)
+SELECT gen_random_uuid(), 'portal.visitSummaryScope', 'SEED_RECORDED', 'GENERAL', '개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)', '개발 시드(DEV-SEED) — 위원회 의결 미검증', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), '{"note":"개발 시드 — 실결정 아님(위원회 의결·권한자 기록으로 다시 남겨야 결정으로 센다)"}'::jsonb, '2026-10-10T03:00:00.000Z'
+WHERE NOT EXISTS (SELECT 1 FROM decision_log_entries WHERE decision_key = 'portal.visitSummaryScope');
+INSERT INTO system_configs (id, key, value, category, label, updated_by, created_at, updated_at)
+SELECT gen_random_uuid(), 'decision.portal.patientReportedVitals', replace('{"choice":"REFERENCE_ONLY","legalReviewRef":"개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)","authorityClaim":"개발 시드(DEV-SEED) — 위원회 의결 미검증","note":"실결정 아님 — 위원회 안건(/admin/gld)으로 의결해 다시 기록해야 결정으로 센다 · 시드 선택 이유: 2026-10-20 사용자 지시 — 가정에서 잰 혈압·혈당은 참고용으로 의료인에게 제공(경보·판정 제외)","decidedByUserId":"__ADMIN__","decidedAt":"2026-10-10T03:00:00.000Z","applied":false,"appliedDetail":"이 선택은 아무것도 바꾸지 않는다"}', '__ADMIN__', coalesce((SELECT id::text FROM users WHERE email = 'admin@hospital.example.org'), ''))::jsonb, 'general', 'decision.portal.patientReportedVitals', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM system_configs WHERE key = 'decision.portal.patientReportedVitals');
+INSERT INTO decision_log_entries (id, decision_key, kind, choice, basis_ref, authority_claim, actor_user_id, detail, occurred_at)
+SELECT gen_random_uuid(), 'portal.patientReportedVitals', 'SEED_RECORDED', 'REFERENCE_ONLY', '개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)', '개발 시드(DEV-SEED) — 위원회 의결 미검증', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), '{"note":"개발 시드 — 실결정 아님(위원회 의결·권한자 기록으로 다시 남겨야 결정으로 센다)"}'::jsonb, '2026-10-10T03:00:00.000Z'
+WHERE NOT EXISTS (SELECT 1 FROM decision_log_entries WHERE decision_key = 'portal.patientReportedVitals');
+INSERT INTO system_configs (id, key, value, category, label, updated_by, created_at, updated_at)
+SELECT gen_random_uuid(), 'decision.portal.costEstimate', replace('{"choice":"SHOW_AS_ESTIMATE","legalReviewRef":"개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)","authorityClaim":"개발 시드(DEV-SEED) — 위원회 의결 미검증","note":"실결정 아님 — 위원회 안건(/admin/gld)으로 의결해 다시 기록해야 결정으로 센다 · 시드 선택 이유: 2026-10-20 사용자 지시 — 명확하지 않으나 예측 자료라고 밝혀서 표시","decidedByUserId":"__ADMIN__","decidedAt":"2026-10-10T03:00:00.000Z","applied":false,"appliedDetail":"이 선택은 아무것도 바꾸지 않는다"}', '__ADMIN__', coalesce((SELECT id::text FROM users WHERE email = 'admin@hospital.example.org'), ''))::jsonb, 'general', 'decision.portal.costEstimate', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM system_configs WHERE key = 'decision.portal.costEstimate');
+INSERT INTO decision_log_entries (id, decision_key, kind, choice, basis_ref, authority_claim, actor_user_id, detail, occurred_at)
+SELECT gen_random_uuid(), 'portal.costEstimate', 'SEED_RECORDED', 'SHOW_AS_ESTIMATE', '개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)', '개발 시드(DEV-SEED) — 위원회 의결 미검증', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), '{"note":"개발 시드 — 실결정 아님(위원회 의결·권한자 기록으로 다시 남겨야 결정으로 센다)"}'::jsonb, '2026-10-10T03:00:00.000Z'
+WHERE NOT EXISTS (SELECT 1 FROM decision_log_entries WHERE decision_key = 'portal.costEstimate');
+INSERT INTO system_configs (id, key, value, category, label, updated_by, created_at, updated_at)
+SELECT gen_random_uuid(), 'decision.portal.labResultRelease', replace('{"choice":"VALUES_NOW_JUDGMENT_AFTER_REVIEW","legalReviewRef":"개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)","authorityClaim":"개발 시드(DEV-SEED) — 위원회 의결 미검증","note":"실결정 아님 — 위원회 안건(/admin/gld)으로 의결해 다시 기록해야 결정으로 센다 · 시드 선택 이유: 2026-10-20 사용자 지시 — 수치(로우 데이터)는 공개, 결과 판정은 의료진 확인 후","decidedByUserId":"__ADMIN__","decidedAt":"2026-10-10T03:00:00.000Z","applied":false,"appliedDetail":"이 선택은 아무것도 바꾸지 않는다"}', '__ADMIN__', coalesce((SELECT id::text FROM users WHERE email = 'admin@hospital.example.org'), ''))::jsonb, 'general', 'decision.portal.labResultRelease', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM system_configs WHERE key = 'decision.portal.labResultRelease');
+INSERT INTO decision_log_entries (id, decision_key, kind, choice, basis_ref, authority_claim, actor_user_id, detail, occurred_at)
+SELECT gen_random_uuid(), 'portal.labResultRelease', 'SEED_RECORDED', 'VALUES_NOW_JUDGMENT_AFTER_REVIEW', '개발 시드(DEV-SEED) — 2026-10-10 사용자 지시(위원회 의결 전)', '개발 시드(DEV-SEED) — 위원회 의결 미검증', (SELECT id FROM users WHERE email = 'admin@hospital.example.org'), '{"note":"개발 시드 — 실결정 아님(위원회 의결·권한자 기록으로 다시 남겨야 결정으로 센다)"}'::jsonb, '2026-10-10T03:00:00.000Z'
+WHERE NOT EXISTS (SELECT 1 FROM decision_log_entries WHERE decision_key = 'portal.labResultRelease');
+COMMIT;

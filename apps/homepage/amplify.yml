@@ -1,0 +1,23 @@
+# AWS Amplify Hosting 빌드 스펙 (Next.js SSR 네이티브 지원 — Docker 불요)
+# Amplify 콘솔에서 모노레포 앱 루트를 apps/homepage 로 지정.
+version: 1
+applications:
+  - appRoot: apps/homepage
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm install --no-audit --no-fund
+        build:
+          commands:
+            # HOMEPAGE_API_ORIGIN: 클라 /api 프록시 대상(빌드 고정). INTERNAL_API_URL: SSG 실데이터(필수).
+            - HOMEPAGE_API_ORIGIN="https://his.example.org" INTERNAL_API_URL="https://his.example.org" NEXT_PUBLIC_API_URL="" npm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - .next/cache/**/*
+# 환경변수(Amplify 콘솔): INTERNAL_API_URL=https://his.example.org

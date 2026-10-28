@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Outer ring -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="#1E3A5F" stroke-width="4"/>
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#C5A55A" stroke-width="1.5"/>
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#C5A55A" stroke-width="1.5"/>
+
+  <!-- Ring text - top arc -->
+  <defs>
+    <path id="topArc" d="M30,100 a70,70 0 0,1 140,0"/>
+    <path id="bottomArc" d="M170,100 a70,70 0 0,1 -140,0"/>
+  </defs>
+  <text font-family="Georgia, serif" font-size="11" font-weight="700" fill="#1E3A5F" letter-spacing="4">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">HOSPITAL RUN</textPath>
+  </text>
+  <text font-family="Georgia, serif" font-size="8.5" font-weight="600" fill="#1E3A5F" letter-spacing="2.5">
+    <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">BLOCKCHAIN CERTIFIED</textPath>
+  </text>
+
+  <!-- Decorative dots on ring -->
+  <circle cx="30" cy="100" r="2.5" fill="#C5A55A"/>
+  <circle cx="170" cy="100" r="2.5" fill="#C5A55A"/>
+
+  <!-- Inner circle -->
+  <circle cx="100" cy="100" r="48" fill="#1E3A5F"/>
+  <circle cx="100" cy="100" r="44" fill="#24476B"/>
+
+  <!-- Medical cross + chain link combined -->
+  <!-- Medical cross -->
+  <rect x="90" y="78" width="20" height="44" rx="3" fill="#C5A55A"/>
+  <rect x="78" y="90" width="44" height="20" rx="3" fill="#C5A55A"/>
+  <!-- Inner cross cutout -->
+  <rect x="93" y="81" width="14" height="38" rx="2" fill="#2A5580"/>
+  <rect x="81" y="93" width="38" height="14" rx="2" fill="#2A5580"/>
+  <!-- Cross fill -->
+  <rect x="95" y="83" width="10" height="34" rx="1.5" fill="#C5A55A"/>
+  <rect x="83" y="95" width="34" height="10" rx="1.5" fill="#C5A55A"/>
+
+  <!-- Chain links at cross corners -->
+  <g stroke="#C5A55A" stroke-width="2" fill="none" opacity="0.8">
+    <ellipse cx="82" cy="82" rx="6" ry="4" transform="rotate(-45 82 82)"/>
+    <ellipse cx="118" cy="82" rx="6" ry="4" transform="rotate(45 118 82)"/>
+    <ellipse cx="82" cy="118" rx="6" ry="4" transform="rotate(45 82 118)"/>
+    <ellipse cx="118" cy="118" rx="6" ry="4" transform="rotate(-45 118 118)"/>
+  </g>
+
+  <!-- Small stars -->
+  <g fill="#C5A55A">
+    <path d="M100 68 L101.5 72 L106 72 L102.5 74.5 L103.5 78.5 L100 76 L96.5 78.5 L97.5 74.5 L94 72 L98.5 72Z" transform="scale(0.6) translate(67 -18)"/>
+    <path d="M100 132 L101.5 136 L106 136 L102.5 138.5 L103.5 142.5 L100 140 L96.5 142.5 L97.5 138.5 L94 136 L98.5 136Z" transform="scale(0.6) translate(67 95)"/>
+  </g>
+</svg>

@@ -1,0 +1,349 @@
+# LoopSpec L1 역기술 파일럿 C — `PatientBriefService`(환자 AI 브리핑 · **배치 + 실시간 하이브리드**)
+#
+# 목적: LoopSpec 의 `trigger`/`budgets`/`precompute` 가 배치·실시간 하이브리드를 담는가를 판정한다.
+#       정본 = `loop-platform-adoption.plan.md` §4-L1.
+# 이 축이 L0·A·B 와 다른 점:
+#   · 실행 모드가 셋이다 — 야간 크론(BATCH) · 조회 시 lazy 계산(LAZY) · 강제 재계산(REFRESH).
+#   · Redis TTL 24h + 이벤트 6종 무효화 + 예산(환자당 초) + 동시성 — 전부 config 로 켜고 끈다.
+#   · **다른 루프를 부른다**(배치 B 가 `interpret-lab` 을 호출) 그리고 **다른 루프에게 불린다**
+#     (`skillContext` 가 이 루프의 출력을 컨텍스트로 쓴다) → 루프 합성.
+#   · 배치 A 는 LLM 이 없고(결정론), 배치 B 만 LLM 이다 — **한 루프 안에 AI 경계가 있다.**
+#
+# 작성 2026-08-20 · 스키마 원본은 저장소 밖 — 복사하지 않는다(§0).
+# 검증: `node scripts/loopspec-validate.mjs ~/Downloads/loopspec.schema.json docs/01-plan/features/loopspec-pilot-patient-brief.yaml`
+
+apiVersion: loop.hospital/v1
+kind: Loop
+
+metadata:
+  id: brief.patient-brief
+  # ⚠️ 유도한 이름. 실물 식별자는 Redis 키 접두 `ai:brief:`(patient-brief.service.ts:67)와
+  #    감사 resourceType `AiPatientBrief`(medical-ai.controller.ts:241)뿐이다.
+  name: 환자 AI 브리핑
+  description: >-
+    진료 전에 알 수 있는 것(인구학·알레르기 3상태·활성 처방·활성 문제·최근 30일 확정검사·최근 활력·
+    직전 서명 진료·현 재원)을 **LLM 없이** 결정론으로 모아 Redis(TTL 24h)에 둔다.
+    계산하지 못한 축은 `unavailable[]` 에 이름으로 적는다(조용히 비우지 않는다).
+    야간 배치에서만 배치 B(LLM 사전 검사해석)를 돌리고, 검증층을 통과한 것만 싣는다.
+
+  # version: (required) ⚠️ 실물에 없음. 🔴 다만 이 루프에는 **페이로드 버전**이 있다
+  #   (`PatientBrief.version: 1` · patient-brief.service.ts:47,143). 그것은 배포 버전이 아니라
+  #   캐시 스키마 버전이다 — `metadata.version`(YYYY.MM.N 배포 단위)과 다른 축이고 담을 자리가 없다.
+  # owners: (required) ⚠️ 실물에 없음(CODEOWNERS 부재 — L0 에서 실측).
+
+  lifecycle: general
+  # 근거: `GET /api/v1/ai/brief/:patientId` 가 DOCTOR·NURSE·PHARMACIST·ADMIN 에게 열려 있고
+  #       (medical-ai.controller.ts:243) 진료 화면이 **패널이 접혀 있어도** 마운트 시 부른다
+  #       (AiAssistantPanel.tsx:349-364).
+  # 🔴 U17 **재확인 = 구조적** — 실물의 "켜짐"은 단일 값이 아니라 config **곱**이다:
+  #      lazy 계산   : 항상 동작(스위치 없음)
+  #      야간 배치 A : `ai.brief.batch.enabled`      기본 **false**(config-runtime.service.ts:66)
+  #      야간 배치 B : `ai.brief.llm.enabled`        기본 **false**(:69) · A 가 ON 일 때만 동작
+  #      동시성      : `ai.brief.concurrency`        기본 3(:67)
+  #      환자당 예산 : `ai.brief.patientBudgetSec`   기본 60(:70)
+  #    `lifecycle` enum 6값 중 "실시간 경로는 general · 배치 경로는 미가동"을 뜻하는 값이 없다.
+
+  authoring:
+    generated_by: llm_draft
+    generator_version: claude-opus-5-1m/loopspec-l1-pilot-2026.08.20
+    source_request: >-
+      LoopSpec L1 표현력 판정 — 배치+실시간 하이브리드가 LoopSpec 의 trigger/budgets 로 표현되는가(§4-L1 축 C).
+    # reviewed_by / reviewed_at: 미검토 → L22 ERROR 대상.
+
+spec:
+  audience:
+    subject: clinician
+    roles:
+      # 근거: `@Roles(DOCTOR, NURSE, PHARMACIST, ADMIN)`(medical-ai.controller.ts:243)
+      - ATTENDING
+      - RESIDENT
+      - WARD_NURSE
+      - CHARGE_NURSE
+      - PHARMACIST
+      - ADMIN_STAFF
+      # 🔴 U21 **재확인**(세 축 전부) — `ADMIN` 대응 값 없음 · `DOCTOR` 하나가 ATTENDING/RESIDENT/PA 를 덮음.
+      # 🔴 신규 — **야간 배치에는 사람 수혜자가 없다.** 크론이 계산해 Redis 에 넣을 뿐이고
+      #    그때는 `roles` 가 아무것도 게이트하지 않는다. `audience` 는 루프당 하나라
+      #    "이 트리거에는 대상자가 없다"를 적을 수 없다.
+
+  lane: sync
+  # 🔴 **표현 불가 — 이 루프는 두 레인을 동시에 갖는다.**
+  #    · sync : `GET /ai/brief/:patientId` — 캐시 없으면 그 자리에서 계산한다(patient-brief.service.ts:98).
+  #    · async: `@Cron('0 2 * * *')` — 대상 전원을 동시성 3으로 돌며 환자당 60초 예산(:192-228).
+  #    `lane` 은 단일 enum 이고 컴파일러는 여기서 **실행 엔진을 고른다**(설계서 §3.5:
+  #    sync=요청 핸들러 / async=durable workflow). 어느 쪽을 적어도 나머지 절반이 산출물에서 사라진다.
+  #    L0 에서 같은 손실을 적었는데(야간 배치가 같은 함수를 부른다) **이 루프에서는 그것이 본질**이다 —
+  #    하이브리드가 이 루프의 존재 이유이기 때문이다.
+
+  risk:
+    # tier: (required) 🔴 하드락 ∩ required(U11 · 세 축 전부).
+    #   🔴 신규 — **한 루프 안에 tier 경계가 있다**: 배치 A/lazy 는 정본 값의 나열(LLM 없음)이고
+    #   배치 B 는 LLM 해석이다(:214). `tier` 는 루프당 하나라 둘 중 하나는 거짓이 된다.
+    ai_disclosure:
+      required: true
+      # 근거: 배치 B 가 실린 브리핑에는 `skills.labInterpretation` 이 있고 그 봉투에 `disclaimer` 가 붙는다.
+      # 🔴 배치 A/lazy 만이면 `false` 가 맞다 — 같은 루프에서 값이 갈린다.
+      #    화면은 이 구분을 `trigger`(BATCH/LAZY/REFRESH)와 `skills.labInterpretation` 유무로 그린다.
+    # samd_assessment: 🔴 하드락 — 비운다.
+    privacy:
+      external_model_transfer: false
+      # 🔴 A 와 같은 자리에서 스키마와 충돌한다(U14 확장) — 사람 결정(2026-08-20) "AI 서버는 원내(WeRU.B)" 를
+      #    `false` 로 명시하라는 것이 계획서 §4-L0 의 지시인데, enum 은 문자열 3값뿐이라 담을 값이 없다.
+      #    🔴 그리고 이 루프에서는 **조건부**다: 배치 A/lazy 는 AI 서버로 아무것도 보내지 않고,
+      #       배치 B 만 보낸다(`ai.brief.llm.enabled` · config-runtime.service.ts:69 설명에도
+      #       "PHI 가 AI 서버로 전송됨"이라 적혀 있다). 조건부 전송을 적을 자리가 없다.
+
+  triggers:
+    - type: schedule
+      cron: 0 2 * * *
+      # 근거: `@Cron('0 2 * * *')`(patient-brief.service.ts:192)
+      timezone: Asia/Seoul
+      # ⚠️ L0 과 같은 유보 — 코드에 timezone 인자가 없어 **프로세스 TZ 에 의존**한다(컨테이너 OS 는 UTC).
+      # 🔴 표현 손실 — 이 크론은 `ai.brief.batch.enabled` 가 false 면 **즉시 return** 한다(:194-195).
+      #    "등록되어 있으나 꺼져 있다"를 트리거 항목에 적을 자리가 없다(`Trigger` 에 `enabled`/`config_ref` 없음).
+    - type: hook
+      hook: patient-view
+      # 근거: 진료 화면이 마운트되면 **패널이 접혀 있어도** 한 번 읽는다(AiAssistantPanel.tsx:349-364).
+      #       그 조회가 캐시 미스면 서버가 그 자리에서 계산한다(patient-brief.service.ts:98 `LAZY`).
+      # ✅ 이 루프는 L0·A·B 와 달리 `hook` enum 이 **실제로 맞는** 유일한 자리다
+      #    (버튼이 아니라 화면 진입이 트리거이기 때문).
+      # 🔴 그러나 L03 이 이 트리거에 `auth.mode: on_behalf_of` 를 **강제**한다 — 아래 참조.
+    # 🔴 세 번째 실행 모드(`REFRESH`)를 적을 자리가 없다.
+    #    `GET /ai/brief/:id?refresh=1`(controller:245-247)은 캐시를 무시하고 다시 계산하며,
+    #    **직전 배치 B 결과를 조건부로 이어받는다**(근거 `recentLabs` 가 그대로면 유지 · :100-102).
+    #    `Trigger` 5종(hook/event/schedule/timer/inbound) 어디에도 "같은 훅의 강제 재계산 변형"이 없다.
+    # 🔴 무효화 이벤트 6종은 트리거가 **아니다**(계산하지 않고 지우기만 한다) — 아래 precompute 에 적었다.
+
+  eligibility:
+    include:
+      - id: BATCH_TARGET_TOMORROW_OR_ADMITTED
+        expr: 'appointment.scheduledAt in [tomorrow 00:00, +1d) and status in (SCHEDULED, CONFIRMED) or admission.status = ADMITTED'
+        note: >-
+          근거 patient-brief.service.ts:239-247 `batchTargets`. 전 환자 금지(예산·PHI 최소).
+          🔴 이 조건은 **야간 배치에만** 걸린다. lazy 경로에는 대상자 제한이 전혀 없다 —
+          역할만 통과하면 어떤 환자의 브리핑도 만들어진다. `eligibility` 는 루프당 하나라
+          "트리거마다 대상 모집단이 다르다"를 적을 수 없다(U2 의 같은 형태).
+          🔴 `expr` 은 미등재 참조라 L11 ERROR(Rule Catalog 부재).
+      - id: BATCH_B_HAS_LABS
+        expr: brief.recentLabs.length > 0
+        note: >-
+          근거 :211 — 해석할 검사가 0건이면 LLM 을 부르지 않고 `noLabs` 로 센다(근거 게이트).
+          🔴 이것은 **루프 안의 두 번째 단계에 걸린 게이트**다. `eligibility` 는 루프 진입 게이트라
+          "배치 B 만의 조건"을 담을 자리가 없다.
+    # exclude / consent: 없음. 🔴 U19 **재확인**(세 축 전부) — 부재를 주장으로 적을 자리가 없다.
+    #   특히 이 루프는 **환자 동의 없이 야간에 전 재원환자의 임상 요약을 만들어 Redis 에 24시간 둔다.**
+    #   `consent` 를 빈 객체로 두면 "동의 요건 없음"으로 읽혀 실물보다 안전하게 들린다 → 블록째 생략한다.
+
+  context:
+    auth:
+      # 🔴 U3 **재확인 = 구조적(세 축 전부)** — enum 두 값 중 어느 것도 사실이 아니다.
+      #   컨트롤러가 역할만 확인하고(controller:243) 서비스는 서버 자격으로 8개 테이블을 읽는다(:113-128).
+      #   🔴 이 루프에서 특히 나쁜 이유: **야간 배치에는 사용자 세션이 아예 없다.**
+      #      그러면 `service_account_minimal` 이 맞을 것 같지만, 그 값의 정의는
+      #      "루프 전용 최소 스코프 계정을 별도 발급"인데 실물은 **앱 DB 전 권한**의 Prisma 클라이언트다.
+      #      그리고 sync 경로(hook 트리거)에는 L03 이 `on_behalf_of` 를 **강제**한다 →
+      #      🔴 **한 루프가 두 트리거를 가지면 L03 이 요구하는 값과 배치가 요구하는 값이 충돌한다.**
+      #      어느 쪽을 적어도 절반은 "없는 통제를 있다고 선언"하는 결과가 된다.
+      patient_binding: session_bound
+      # 근거(sync): `@Param('patientId', ParseUUIDPipe)`(controller:245) — 모델이 정하지 않는다.
+      # 🔴 배치 경로에서는 `cohort` 가 맞다(`batchTargets()` 가 환자 집합을 만든다 · :239-247).
+      #    슬롯이 하나라 둘 중 하나만 적힌다.
+
+    resources:
+      - ref: prisma.patient.findUnique.demographics
+        purpose: 연령·성별을 브리핑에 싣고 하위 스킬(검사해석·약물추천)의 프롬프트 근거로 쓰기 위해
+        fields: [dateOfBirth, gender]
+        # 근거: :114
+      - ref: prisma.allergy.status
+        purpose: 알레르기를 3상태(없음확인/미문진/조회불가)로 싣기 위해 — 빈 목록을 "없음"이라 말하지 않는다
+        # 근거: :127(`AllergyService.getStatus`) → :149(실패 시 `{status:'UNAVAILABLE'}`)
+        # 🔴 U8 **재확인** — 이 3상태가 이 루프의 핵심 산출인데 `resources[].optional`(boolean)로는
+        #    "조회 실패"와 "미문진"과 "없음 확인"을 구분해 선언할 수 없다.
+      - ref: prisma.prescription.active
+        purpose: 활성 처방을 병용·상호작용 판단의 근거로 싣기 위해
+        limit: 50
+        # 근거: :115
+      - ref: prisma.problemList.active
+        purpose: 활성 문제목록을 검사·약물 해석의 맥락으로 싣기 위해
+        limit: 30
+        # 근거: :116
+      - ref: prisma.labResult.recent-verified
+        purpose: 최근 30일 확정 검사를 항목별 최신값으로 싣고 이상 항목 수를 세기 위해
+        lookback: P30D
+        limit: 10
+        # 근거: :117-121(status COMPLETED|VERIFIED · completedAt ≥ P30D · take 10) → :131-134(항목별 최신값·이상 수)
+        # 🔴 L0 과 같은 이중 상한(검사지 10건 → 항목별 최신값). `limit` 은 하나뿐이다.
+      - ref: prisma.preVisitVitals.latest
+        purpose: 최근 활력 1건을 진료 전 참고값으로 싣기 위해
+        limit: 1
+        # 근거: :122
+        # 🔴 **신규 · 축 B 와의 교차 실측** — 이 리소스는 **외래 저장소(PreVisitVitals)만** 읽는다.
+        #    그리고 축 B 의 포트는 `vitals.recorded` 를 **외래 경로에서만** 발행한다
+        #    (vitals-ingest.service.ts:212-220 `EMIT_RECORDED_ROUTES = {OUTPATIENT}`).
+        #    두 사실이 우연히 맞물려 무효화가 정합하지만, **어느 쪽 선언에도 그 의존이 적혀 있지 않다.**
+        #    입원 활력(FlowSheetEntry)을 브리핑에 넣는 날, 무효화가 조용히 깨진다(stale 브리핑).
+        #    LoopSpec 에는 루프 간 불변식을 적을 자리가 없다(계획서 §3 B11 이 무는 자리).
+      - ref: prisma.encounter.last-signed
+        purpose: 직전 서명·정정 진료의 주호소·평가를 맥락으로 싣기 위해(초안은 확정 기록이 아니라 제외)
+        limit: 1
+        # 근거: :124(status SIGNED|AMENDED)
+      - ref: prisma.admission.current
+        purpose: 현 재원 여부와 병동·병실을 싣기 위해
+        limit: 1
+        # 근거: :126
+
+    # 🔴 표현 불가(**신규 N12** — 부분 가용성) — 여덟 축은 `Promise.all` 로 **각자 실패**하고,
+    #    실패한 축의 이름이 `unavailable[]` 에 담겨 나간다(:109,114-128,161).
+    #    `resources[].optional` 은 boolean 이고 그 뜻은 "false 면 조회 실패 시 진행하지 않고 handoff"다 —
+    #    전부-아니면-전무. 실물의 "그 축만 빼고 나머지는 내되, 뺐다고 말한다"를 적을 값이 없다.
+    #    그리고 그 목록은 상위 루프로 **전파된다**: `skillContext` 가
+    #    `⚠️ 브리핑 미계산 축: …` 을 `groundedOn` 에 붙인다(medical-ai.service.ts:944).
+
+    precompute:
+      # enabled: 🔴 boolean 으로 적을 수 없다(U17). 스위치가 config **두 개**이고 둘 다 기본 OFF이며,
+      #   그와 별개로 **lazy 계산은 항상 동작한다**(스위치가 없다). true/false 어느 쪽도 배포 상태와 어긋난다.
+      warm_on: []
+      # 근거: 예열은 이벤트가 아니라 크론이 한다 — "이벤트 예열 없음"을 빈 배열로 주장한다.
+      ttl: P1D
+      # 근거: `TTL_SEC = 24*3600`(:68) · `setex`(:168)
+      invalidate_on:
+        - lab.result.completed
+        - lab.result.verified
+        - dispensing.completed
+        - admission.created
+        - encounter.signed
+        - vitals.recorded
+      # 근거: `@OnEvent` 6종(:177-182)
+      # 🔴 표현 손실 A(**신규 N14**) — 무효화는 **페이로드의 `patientId` 에 결속**돼 있고,
+      #    없으면 조용히 아무 일도 하지 않는다(`invalidate(p?.patientId)` → `if (!patientId) return` · :172-173).
+      #    실측: 6종 전부 `patientId` 를 싣지만 `lab.service.ts:412` 는 `order.prescription?.encounter?.patientId`
+      #    로 **두 번의 옵셔널 체이닝**을 지난다 — 처방/진료가 없는 오더의 결과는 무효화되지 않는다.
+      #    `invalidate_on: [토픽 문자열]` 에는 **페이로드 필드 바인딩도, 결속 실패 시 동작도** 적을 자리가 없다.
+      # 🔴 표현 손실 B — 이 무효화는 **삭제**다(`del` · :174). "지우고 다음 조회가 다시 만든다"와
+      #    "즉시 재계산한다"는 지연·부하가 전혀 다른 정책인데 `invalidate_on` 은 둘을 구분하지 않는다.
+      # 🔴 표현 손실 C(U16 **재확인**) — 이 루프의 캐시 위에 **두 번째 캐시**가 있다:
+      #    `ai:skill:<skill>:<sha256>` TTL 600초 · `source:'AI'` 인 응답만 저장(medical-ai.service.ts:974,985-1003).
+      #    그것은 이 6개 이벤트로 지워지지 않는다. `precompute` 는 캐시 하나만 상정한다.
+
+    # redaction: 생략 — 배치 A/lazy 는 외부로 나가지 않는다.
+    # 🔴 배치 B 는 나간다(브리핑 전체가 프롬프트 컨텍스트가 된다). 조건부 마스킹을 적을 자리가 없다.
+
+  # reasoning: 블록째 생략.
+  # 🔴 **표현 불가 — 이 루프는 절반만 추론한다.** 배치 A/lazy 는 모델이 없고(그것이 설계 규칙이다 —
+  #    :18 "LLM 을 부르지 않는다"), 배치 B 만 `labInterpreter` 를 부른다.
+  #    `Reasoning` 은 루프당 하나이고 `model_class: rules_only` 를 적으면 배치 B 가 사라진다.
+
+  tools:
+    allow: []
+    # 🔴 **거짓에 가깝다 — 그리고 이것이 이 축의 가장 큰 산출물이다(신규 N11 · 루프 합성).**
+    #    배치 B 는 `this.labInterpreter(pid, brief)` 를 부른다(:214). 그 해석기는
+    #    `MedicalAiService.onModuleInit` 이 늦은 바인딩으로 붙인 **다른 루프**(L0 의 `lab.interpret-lab`)이고,
+    #    반환값은 그 루프의 **출력 봉투 그대로**다(`LabInterpretationEnvelope` · :30-36).
+    #    브리핑은 거기에 `computedAt`·`basedOn`(브리핑 시각 + 검사 항목·값 나열)을 얹어
+    #    **프로비넌스를 이전**한다(:220).
+    #    반대 방향도 있다 — L0·A 의 `skillContext` 가 **이 루프의 출력을 컨텍스트로** 쓴다
+    #    (medical-ai.service.ts:930-950).
+    #    🔴 LoopSpec 에는 `calls_loop_ref`/`consumed_by_loop_ref` 가 없다. `tools.allow[].ref` 는
+    #       Tool Registry 의 툴이지 루프가 아니고, `context.resources[].ref` 는 쿼리 ID 다.
+    #       → **루프 그래프(누가 누구를 부르고 누구의 출력을 먹는가)가 전 산출물에서 사라진다.**
+    #       계획서 §3 B11("루프 간 상호작용 규칙 부재")이 실물에서 확인된 자리다.
+
+  output:
+    kind: card
+    # 근거: 진료 보조 패널의 감시 배지·요약으로 그려진다(AiAssistantPanel.tsx:349-364 및 이하 렌더).
+    # 🔴 표현 손실 — 이 루프의 **주 소비자는 화면이 아니라 다른 루프**다(위 tools 참조).
+    #    `kind` 는 "UI 렌더러·write-back 경로·감사 스키마를 고르는" 값이라(설계서 §3.6)
+    #    "출력이 다른 루프의 입력이다"를 담지 못한다.
+    presentation:
+      surface: side_panel
+      intensity: passive
+      show_sources: true
+      # 근거: `basis[]`(무엇을 근거로 봤는지 · :110,135-139)
+      show_coverage_note: true
+      # 근거: `unavailable[]`(계산하지 못한 축 · :61-62,161)
+    write_back:
+      target: none
+      # 근거: EMR 에 쓰지 않는다. 🔴 다만 **Redis 에 24시간 남는다** — PHI 요약본이다.
+      #    `write_back` 은 EMR 경로만 상정하고 `audit.retention` 은 감사 로그만 다룬다.
+      #    "산출물 자체의 보존기간"을 적을 자리가 없다(TTL 은 `precompute` 아래 있고 그건 성능 슬롯이다).
+    # 🔴 U4 **재확인 = 구조적(네 축 전부)** — 이 루프의 봉투도 슬롯이 없다:
+    #    `computedAt` · `trigger`(BATCH/LAZY/REFRESH) · `cached` · `basis[]` · `unavailable[]` ·
+    #    `version`(:46-65,86-105). 화면과 하위 루프가 **이 값들로 신선도를 말한다**
+    #    (`groundedOn: 브리핑(<trigger> <computedAt>)` · medical-ai.service.ts:944).
+
+  # verification: 생략 — 이 루프 자체에는 검증층이 없다(결정론이라 검증할 "생성물"이 없다).
+  # 🔴 그런데 배치 B 에는 있다 — **다른 루프의 검증층**을 통과한 것만 싣는다
+  #    (`r.value.source !== 'AI'` 면 싣지 않고 `unavailable` 에 사유를 적는다 · :217).
+  #    "다른 루프의 검증 결과를 채택 조건으로 삼는다"를 적을 자리가 없다.
+
+  # escalation: 생략 — 상향 사다리가 없다(맞다. 이 루프는 경보를 내지 않는다).
+
+  budgets:
+    latency:
+      # p95_ms: (required) 🔴 실물에 sync 지연 예산이 **없다**(측정도 없다 — 이 루프는 `latencyMs` 를 내지 않는다).
+      #   비운다.
+      # timeout_ms: 없음 — lazy 계산에 타임아웃이 없다. 8개 쿼리가 느리면 화면이 그만큼 기다린다.
+      on_timeout: fallback_message
+      # ⚠️ 정확히는 폴백이 **축 단위**다(실패한 축만 `unavailable`). 세 enum 값 중 가장 가깝지만 근사다.
+    cost:
+      daily_invocation_cap: 3
+      # 🔴 **오독을 부르는 근사다.** 실물의 3은 일일 호출 상한이 아니라 **동시성**(`ai.brief.concurrency` · :200)이다.
+      #    `budgets` 에 동시성 슬롯이 없어 여기 적었는데, 컴파일러는 이것을 "하루 3회 호출 후 차단"으로 읽는다.
+      #    → 🔴 적지 않는 편이 낫다. 남겨 두는 이유는 **근사 매핑이 어떻게 거짓이 되는지**를 보이기 위해서다.
+    # 🔴 표현 불가(**신규 N13**) — 이 루프의 진짜 예산은 **대상 1건당 시간 예산**이다:
+    #    `withBudget(this.labInterpreter(pid, brief), budgetSec*1000)`(:214 · 기본 60초 · :201).
+    #    초과하면 결과를 기다리지 않고 다음 환자로 가며, 그 사실을 **미계산이라고 적는다**
+    #    (`unavailable.push('skills.labInterpretation(예산 60초 초과 — 미계산)')` · :215).
+    #    `Budgets` 에는 `per_target_ms` 도 `concurrency` 도 `on_budget_exceeded: declare_uncomputed` 도 없다
+    #    (`budgets.alerts.on_budget_exceeded` 는 알림 강도 강등이라 다른 축이다).
+
+  audit:
+    record: []
+    # 🔴 표현 불가 — 남기는 것과 enum 이 어긋난다.
+    #    · sync 경로: `@AuditAiRead('AiPatientBrief')`(controller:241) → 인터셉터가 READ 1행 ·
+    #      `resourceId = patientId` · `changes.egress = patientBound=…;via=…;path=…`(audit.interceptor.ts:127-133).
+    #      🔴 `record[]` enum 15종에 "환자 귀속 성공 여부"에 해당하는 값이 없다.
+    #      (그 값은 **모르는 것을 아는 척하지 않기 위해** 넣은 것이다 — no-audit.decorator.ts:29-31)
+    #    · 배치 경로: **감사행이 없다.** 크론에는 `user.id` 가 없어 인터셉터가 탈락하고
+    #      (audit.interceptor.ts:117 `if (!user?.id) return;`), 모듈이 직접 남기지도 않는다.
+    #      남는 것은 로그 한 줄뿐이다(:226 — 대상/성공/실패/배치B 7분류).
+    #      🔴 즉 **야간에 전 재원환자의 임상 요약을 만든 사실이 원장에 없다.**
+    #      `audit` 블록은 루프당 하나라 "트리거마다 감사가 다르다"를 적을 수 없다(U2 **재확인**).
+    retention:
+      audit_log: P365D
+      # 근거: config `security.audit.retentionDays = 365`. 🔴 세 축 모두 같은 실측 — **읽는 코드가 없다.**
+    access_log_identity: clinician_of_record
+    # 🔴 배치 경로에는 clinician 이 없다. enum 의 `agent_only` 를 적으면 sync 경로가 거짓이 되고,
+    #    `both` 를 적으면 **실물에 없는 에이전트 주체**를 있다고 선언한다(계획서 §3 B4 와 같은 축).
+
+  # evaluation: 생략 — 골든셋·레드팀·CI 게이트·섀도우 요건 없음(세 축 전부 동일).
+
+  rollout:
+    kill_switch:
+      granularity: [global, loop]
+      # 근거: global = `ai.server.enabled`(배치 B 에만 영향) · loop = `ai.brief.batch.enabled`/`ai.brief.llm.enabled`
+      # 🔴 표현 손실 — **lazy 경로에는 킬스위치가 없다.** 끄는 방법이 코드 배포뿐이다.
+      #    `granularity` 는 "어느 범위로 끌 수 있는가"만 말하지 "끌 수 없는 경로가 있다"를 말하지 못한다.
+      fallback: emr_native_behavior
+      # 근거: 브리핑이 없어도 하위 스킬은 직접 조회로 접는다(medical-ai.service.ts:948-963) — 같은 값, 다른 신선도.
+      # 🔴 표현 손실 — 그 폴백이 **다른 루프 안에** 있다(이 루프가 아니라 소비자가 접는다). 적을 자리가 없다.
+    version_pinning: true
+    # 🔴 여기서는 실질 의미가 있다 — 캐시에 든 브리핑은 **이전 코드가 만든 것**이고, 소비 시점의
+    #    `PatientBrief.version`(:47)만이 그것을 판별한다. 그런데 `version_pinning` 은 "실행 중 async
+    #    워크플로를 시작 시점 버전에 고정"을 뜻하지 **저장된 산출물의 버전 호환**이 아니다 — 다른 축이다.
+    #    실물의 방어는 `parsed.skills ?? { labInterpretation: null }`(:93) 같은 **읽기 시점 보정**이다.
+
+  kpis:
+    - id: brief_unavailable_axes
+      direction: decrease
+      # 근거: `unavailable[]` 길이. 🔴 U9 **재확인** — 분모(축 8개)를 적을 자리가 없다.
+      #    그리고 축마다 실패 사유가 다른데 `Kpi` 는 단일 스칼라다.
+    - id: batch_b_computed_ratio
+      direction: increase
+      # 근거: 야간 로그의 `계산 b.computed / 대상 b.eligible`(:203,226).
+      # 🔴 **분모가 7분류로 갈린다**: eligible · computed · budgetSkipped · rejected · noInterpreter ·
+      #    error · noLabs(:203). "왜 계산되지 않았는가"가 여섯 가지이고 그중 `noLabs` 는 결함이 아니라
+      #    **근거 게이트가 정상 작동한 것**이다. `Kpi{id,direction,target,baseline,dashboard}` 로는
+      #    이 구분이 전부 사라지고, 자동 생성 대시보드는 정상 동작을 미달로 그린다.
+      # 🔴 그리고 이 값들은 **로그에만 있다**(감사·DB 어디에도 없다) — 지표로 선언하면
+      #    존재하지 않는 데이터 소스를 가리키게 된다(계획서 §3 B14 신선도 축).

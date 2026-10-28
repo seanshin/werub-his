@@ -1,0 +1,38 @@
+-- 2026-10-27 데모 약품 효능 분류 — seed.ts SEED_MED_CATEGORY 와 같은 값(기계 대조 test/seed/seed-med-category.spec.ts)
+-- 근거: 운영 약품 마스터 같은 성분 실제 품목의 효능 분류(한 분류 90% 이상·표본 3 이상만) · 🔴 분류가 비어 있을 때만 채운다(사람이 넣은 값을 덮지 않는다)
+BEGIN;
+UPDATE medication_codes SET category = '해열·진통·소염제' WHERE code = 'M040702' AND category IS NULL;
+UPDATE medication_codes SET category = '해열·진통·소염제' WHERE code = 'M040703' AND category IS NULL;
+UPDATE medication_codes SET category = '해열·진통·소염제' WHERE code = 'M040704' AND category IS NULL;
+UPDATE medication_codes SET category = '해열·진통·소염제' WHERE code = 'M040705' AND category IS NULL;
+UPDATE medication_codes SET category = '항생물질(페니실린계 등)' WHERE code = 'M047801' AND category IS NULL;
+UPDATE medication_codes SET category = '항생물질(마이코플라스마)' WHERE code = 'M047803' AND category IS NULL;
+UPDATE medication_codes SET category = '항생물질(페니실린계 등)' WHERE code = 'M047805' AND category IS NULL;
+UPDATE medication_codes SET category = '항생물질(페니실린계 등)' WHERE code = 'M099903' AND category IS NULL;
+UPDATE medication_codes SET category = '소화성궤양용제' WHERE code = 'M065201' AND category IS NULL;
+UPDATE medication_codes SET category = '소화성궤양용제' WHERE code = 'M065202' AND category IS NULL;
+UPDATE medication_codes SET category = '기타 소화기관용약' WHERE code = 'M065203' AND category IS NULL;
+UPDATE medication_codes SET category = '소화성궤양용제' WHERE code = 'M065204' AND category IS NULL;
+UPDATE medication_codes SET category = '혈압강하제' WHERE code = 'M091501' AND category IS NULL;
+UPDATE medication_codes SET category = '동맥경화용제' WHERE code = 'M091503' AND category IS NULL;
+UPDATE medication_codes SET category = '동맥경화용제' WHERE code = 'M091505' AND category IS NULL;
+UPDATE medication_codes SET category = '혈압강하제' WHERE code = 'M091506' AND category IS NULL;
+UPDATE medication_codes SET category = '당뇨병용제' WHERE code = 'M082301' AND category IS NULL;
+UPDATE medication_codes SET category = '당뇨병용제' WHERE code = 'M082302' AND category IS NULL;
+UPDATE medication_codes SET category = '당뇨병용제' WHERE code = 'M082303' AND category IS NULL;
+UPDATE medication_codes SET category = '항히스타민제' WHERE code = 'M073101' AND category IS NULL;
+UPDATE medication_codes SET category = '기타 알레르기용약' WHERE code = 'M073102' AND category IS NULL;
+UPDATE medication_codes SET category = '정신신경용제' WHERE code = 'M094201' AND category IS NULL;
+UPDATE medication_codes SET category = '최면진정제' WHERE code = 'M094202' AND category IS NULL;
+UPDATE medication_codes SET category = '정신신경용제' WHERE code = 'M094203' AND category IS NULL;
+UPDATE medication_codes SET category = '혈액대용제' WHERE code = 'M099901' AND category IS NULL;
+UPDATE medication_codes SET category = '혈액응고저지제' WHERE code = 'M200101' AND category IS NULL;
+UPDATE medication_codes SET category = '혈액응고저지제' WHERE code = 'M200102' AND category IS NULL;
+UPDATE medication_codes SET category = '기타 순환계용약' WHERE code = 'M200501' AND category IS NULL;
+UPDATE medication_codes SET category = '항악성종양제' WHERE code = 'M300101' AND category IS NULL;
+UPDATE medication_codes SET category = '항악성종양제' WHERE code = 'M300102' AND category IS NULL;
+UPDATE medication_codes SET category = '항악성종양제' WHERE code = 'M300201' AND category IS NULL;
+UPDATE medication_codes SET category = '하제·완장제' WHERE code = 'M300301' AND category IS NULL;
+UPDATE medication_codes SET category = '골격근이완제' WHERE code = 'M500101' AND category IS NULL;
+UPDATE medication_codes SET category = '항전간제' WHERE code = 'M500301' AND category IS NULL;
+COMMIT;

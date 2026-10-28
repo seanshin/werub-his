@@ -1,0 +1,11 @@
+{
+  "_comment": "환자 포털 시드 계정(DEV·REHEARSAL 전용) — PatientAuthService.seedTestAccounts 가 런타임에 읽는다. src 에 두면 nest build 산출물(dist)에 시드 생년월일·공용 비밀번호가 남아 REAL 산출물 G12 가 FAIL 한다(2026-09-14 실측). REAL 에서는 컨트롤러가 allowsSeedLogin 으로 403 — 이 파일을 읽기 전에 막힌다.",
+  "password": "CHANGE_ME",
+  "patients": [
+    { "name": "김영수", "phone": "010-1234-5678", "dob": "1958-03-15", "gender": "MALE", "mrn": "P2026-0001" },
+    { "name": "이미숙", "phone": "010-2345-6789", "dob": "1965-07-22", "gender": "FEMALE", "mrn": "P2026-0002" },
+    { "name": "정민호", "phone": "010-5678-9012", "dob": "1985-01-10", "gender": "MALE", "mrn": "P2026-0005" },
+    { "name": "한지영", "phone": "010-6789-0123", "dob": "1990-09-03", "gender": "FEMALE", "mrn": "P2026-0006" },
+    { "name": "윤서연", "phone": "010-0123-4567", "dob": "1995-12-25", "gender": "FEMALE", "mrn": "P2026-0010" }
+  ]
+}

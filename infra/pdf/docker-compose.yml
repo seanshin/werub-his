@@ -1,0 +1,17 @@
+# 헤드리스 PDF 렌더 (격리) — browserless/chrome. 문서충실도 서버 PDF용(설계 §12.1·12.10).
+# openpacs/jitsi/twin 무관. 127.0.0.1 바인딩(외부 비노출). API가 HTTP /pdf 호출.
+services:
+  his-pdf:
+    image: browserless/chrome:latest
+    container_name: his-pdf
+    restart: unless-stopped
+    environment:
+      - MAX_CONCURRENT_SESSIONS=2
+      - CONNECTION_TIMEOUT=60000
+      - TOKEN=${PDF_TOKEN:-hispdf-dev-token}
+      - PREBOOT_CHROME=true
+      - MAX_QUEUE_LENGTH=10
+    ports:
+      - "127.0.0.1:3505:3000"
+    mem_limit: 1500m
+    shm_size: 1g

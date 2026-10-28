@@ -1,0 +1,309 @@
+@import 'tailwindcss';
+@import '../components/document/document.css';
+
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
+}
+
+/* ── 글로벌 크롬 개선 (모든 화면 적용) ── */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: rgba(79, 70, 229, 0.16); }
+
+/* 얇은 스크롤바 (사이드바·패널) */
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.4) transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); border-radius: 9999px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* 본문 영역 은은한 스크롤바 */
+main::-webkit-scrollbar { width: 8px; height: 8px; }
+main::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
+main::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+main::-webkit-scrollbar-track { background: transparent; }
+
+/* 카드 등장 애니메이션 */
+@keyframes fade-in-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in-up { animation: fade-in-up 0.25s ease-out; }
+
+/* ── Portal Accessibility ── */
+.portal-font-lg {
+  font-size: 16px;
+}
+.portal-font-lg .text-xs { font-size: 0.8125rem; line-height: 1.25rem; }
+.portal-font-lg .text-sm { font-size: 0.9375rem; line-height: 1.375rem; }
+.portal-font-lg .text-\[11px\] { font-size: 0.75rem; }
+.portal-font-lg .text-\[10px\] { font-size: 0.6875rem; }
+.portal-font-lg .text-\[9px\] { font-size: 0.65rem; }
+.portal-font-lg .text-\[8px\] { font-size: 0.625rem; }
+/* 🔴 (2026-10-22 포털 A7) 고정 px 글자는 rem 이 아니라 큰 글자 모드에서 자라지 않는다 — 포털이 쓰는 고정 px 크기는 전부 여기 있어야 한다
+   (종전엔 11px·9px 규칙이 없어 큰 글자 모드에서 11px 라벨이 10px 글자보다 작아지는 역전이 났다 · 가드 web test/ui/portal-p4-a6-a7) */
+
+.portal-font-xl {
+  font-size: 20px;
+}
+.portal-font-xl .text-xs { font-size: 0.9375rem; line-height: 1.375rem; }
+.portal-font-xl .text-sm { font-size: 1.0625rem; line-height: 1.5rem; }
+.portal-font-xl .text-\[11px\] { font-size: 0.875rem; }
+.portal-font-xl .text-\[10px\] { font-size: 0.8125rem; }
+.portal-font-xl .text-\[9px\] { font-size: 0.78rem; }
+.portal-font-xl .text-\[8px\] { font-size: 0.75rem; }
+.portal-font-xl .text-lg { font-size: 1.375rem; }
+.portal-font-xl .py-2\.5 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.portal-font-xl button, .portal-font-xl a { min-height: 48px; }
+
+.portal-high-contrast {
+  --text-primary: #000000;
+  --text-secondary: #1a1a1a;
+  --bg-card: #ffffff;
+  --border-color: #000000;
+}
+.portal-high-contrast .text-gray-500 { color: #333333 !important; }
+.portal-high-contrast .text-gray-400 { color: #444444 !important; }
+.portal-high-contrast .text-gray-300 { color: #555555 !important; }
+.portal-high-contrast .text-\[10px\] { color: #333333; }
+.portal-high-contrast .border-gray-100,
+.portal-high-contrast .border-gray-200 { border-color: #666666 !important; }
+.portal-high-contrast .bg-gray-50 { background-color: #f0f0f0 !important; }
+.portal-high-contrast .bg-gray-100 { background-color: #e0e0e0 !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-font-lg *, .portal-font-xl *, .portal-high-contrast * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ── Portal Design System v2.2 ── */
+
+/* Safe area for mobile bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Pretendard font import */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+/* ── UI 크롬 언어(P1-C) 다국어 폰트 — Pretendard 유지 + ja/ar 폴백(ui-locale-i18n.plan.md §2.5) ──
+   웨이트는 실사용 3종(400/500/700)만 · display=swap 이라 로딩 중에도 텍스트가 비지 않는다.
+   🔴 로드 실패(오프라인·CDN 차단) 시에는 스택 뒤의 시스템 폰트(system-ui 등)가 자연 폴백된다 —
+      글리프가 없는 문자는 브라우저가 시스템 대체 폰트로 그리므로 화면이 깨지지 않는다(추가 코드 불필요). */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&display=swap');
+
+/* 화면 전용(@media screen) — 🔴 인쇄 경로 불변: 법정 서식(.doc-print-root)은 document.css 가
+   자체 font-family 를 직접 선언하고 있고, 아래 규칙은 print 매체에 아예 매칭되지 않는다. */
+@media screen {
+  /* 기본 스택 — Pretendard(한/영) 우선, ja/ar 글리프는 문자 단위로 Noto 폴백, 최후엔 시스템 폰트 */
+  body {
+    font-family: 'Pretendard Variable', Pretendard, 'Noto Sans JP', 'Noto Sans Arabic',
+      -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  }
+  /* ja 서브트리는 Noto Sans JP 우선 — Pretendard 의 한자 서브셋이 일본어 문장에 한국식 자형을 내는 것 방지 */
+  :lang(ja) {
+    font-family: 'Noto Sans JP', 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+  }
+  /* ar 서브트리는 Noto Sans Arabic 우선 — 라틴/한글 글리프는 없어 문자 단위로 Pretendard 폴백된다 */
+  :lang(ar) {
+    font-family: 'Noto Sans Arabic', 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+  }
+}
+
+/* Portal card hover lift */
+.portal-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.portal-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* Portal Dark Mode */
+.portal-dark {
+  --portal-bg: #0f172a;
+  --portal-card: #1e293b;
+  --portal-border: #334155;
+  --portal-text: #f1f5f9;
+  --portal-text-secondary: #94a3b8;
+  --portal-text-muted: #64748b;
+}
+.portal-dark .bg-gray-50 { background-color: var(--portal-bg) !important; }
+.portal-dark .bg-white { background-color: var(--portal-card) !important; }
+.portal-dark .bg-white\/95 { background-color: rgba(30, 41, 59, 0.95) !important; }
+.portal-dark .bg-white\/80 { background-color: rgba(30, 41, 59, 0.8) !important; }
+.portal-dark .bg-white\/70 { background-color: rgba(30, 41, 59, 0.7) !important; }
+.portal-dark .border-gray-100,
+.portal-dark .border-gray-200 { border-color: var(--portal-border) !important; }
+.portal-dark .text-gray-900 { color: var(--portal-text) !important; }
+.portal-dark .text-gray-800 { color: #e2e8f0 !important; }
+.portal-dark .text-gray-700 { color: #cbd5e1 !important; }
+.portal-dark .text-gray-600 { color: var(--portal-text-secondary) !important; }
+.portal-dark .text-gray-500 { color: var(--portal-text-muted) !important; }
+.portal-dark .text-gray-400 { color: #475569 !important; }
+.portal-dark .bg-gray-100 { background-color: #334155 !important; }
+.portal-dark .divide-gray-100 > * + * { border-color: var(--portal-border) !important; }
+.portal-dark .hover\:bg-gray-50:hover { background-color: #334155 !important; }
+.portal-dark .hover\:bg-gray-100:hover { background-color: #475569 !important; }
+
+/* Portal card animation */
+@keyframes portal-fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.portal-card-animate {
+  animation: portal-fade-in-up 0.3s ease-out both;
+}
+
+/* Badge pulse animation */
+@keyframes portal-badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.portal-badge-pulse {
+  animation: portal-badge-pulse 2s ease-in-out infinite;
+}
+
+/* ── CMS / 커스텀 문서(매뉴얼 등) 본문 타이포그래피 ──
+   Tailwind v4에 typography 플러그인 미설치 → prose 대체용 문서 스타일 */
+.cms-prose { color: #374151; font-size: 15px; line-height: 1.78; word-break: keep-all; }
+.cms-prose > :first-child { margin-top: 0 !important; }
+.cms-prose > :last-child { margin-bottom: 0 !important; }
+.cms-prose h2 {
+  font-size: 1.35rem; font-weight: 700; color: #0f172a; letter-spacing: -0.01em;
+  margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e5e7eb;
+  scroll-margin-top: 5rem;
+}
+.cms-prose h3 {
+  font-size: 1.08rem; font-weight: 600; color: #1e3a8a;
+  margin: 1.75rem 0 0.55rem; padding-left: 0.6rem; border-left: 3px solid #6366f1;
+}
+.cms-prose h4 { font-size: 0.98rem; font-weight: 600; color: #334155; margin: 1.25rem 0 0.4rem; }
+.cms-prose p { margin: 0.7rem 0; }
+.cms-prose ul { list-style: disc; padding-left: 1.4rem; margin: 0.6rem 0; }
+.cms-prose ol { list-style: decimal; padding-left: 1.5rem; margin: 0.6rem 0; }
+.cms-prose li { margin: 0.32rem 0; padding-left: 0.15rem; }
+.cms-prose li::marker { color: #6366f1; }
+.cms-prose ol li::marker { color: #64748b; font-weight: 600; }
+.cms-prose li > ul, .cms-prose li > ol { margin: 0.3rem 0; }
+.cms-prose dl { margin: 0.9rem 0; border: 1px solid #eef2f7; border-radius: 0.65rem; overflow: hidden; }
+.cms-prose dt { font-weight: 600; color: #0f172a; background: #f8fafc; padding: 0.6rem 0.9rem; border-top: 1px solid #eef2f7; }
+.cms-prose dt:first-child { border-top: 0; }
+.cms-prose dd { margin: 0; padding: 0.55rem 0.9rem 0.85rem; color: #475569; }
+.cms-prose table {
+  width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.1rem 0;
+  font-size: 0.9rem; border: 1px solid #e5e7eb; border-radius: 0.65rem; overflow: hidden;
+}
+.cms-prose thead th { background: #f1f5f9; color: #0f172a; font-weight: 600; text-align: left; }
+.cms-prose th, .cms-prose td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #eef2f7; border-right: 1px solid #eef2f7; vertical-align: top; }
+.cms-prose th:last-child, .cms-prose td:last-child { border-right: 0; }
+.cms-prose tbody tr:last-child td { border-bottom: 0; }
+.cms-prose tbody tr:nth-child(even) { background: #fafbfc; }
+.cms-prose blockquote {
+  margin: 1.1rem 0; padding: 0.7rem 1rem; background: #eff6ff;
+  border-left: 4px solid #3b82f6; border-radius: 0 0.5rem 0.5rem 0; color: #1e40af; font-size: 0.92rem;
+}
+.cms-prose blockquote p { margin: 0; }
+.cms-prose code {
+  background: #f1f5f9; color: #3730a3; padding: 0.08rem 0.4rem; border-radius: 0.35rem;
+  font-size: 0.86em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap;
+}
+.cms-prose pre { background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: 0.6rem; overflow: auto; margin: 1rem 0; }
+.cms-prose pre code { background: transparent; color: inherit; padding: 0; white-space: pre; }
+.cms-prose a { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.cms-prose a:hover { color: #1d4ed8; }
+.cms-prose strong, .cms-prose b { color: #0f172a; font-weight: 600; }
+.cms-prose mark { background: #fef08a; padding: 0 0.2rem; border-radius: 0.2rem; }
+.cms-prose hr { border: 0; border-top: 1px solid #e5e7eb; margin: 2rem 0; }
+.cms-prose img { max-width: 100%; border-radius: 0.5rem; }
+
+/* 큰 화면 보기(board) 회진 밀도 — 원거리 판독용 폰트 확대(board scope 한정·전역 무영향).
+   패널 탭의 고정 text-* 유틸을 scope 내에서만 오버라이드(§5.1). */
+.chart-board-round { font-size: 1.05rem; }
+.chart-board-round .text-xs { font-size: 0.86rem; line-height: 1.25rem; }
+.chart-board-round .text-sm { font-size: 1rem; line-height: 1.5rem; }
+.chart-board-round .text-base { font-size: 1.15rem; line-height: 1.75rem; }
+.chart-board-round .text-lg { font-size: 1.3rem; line-height: 1.9rem; }
+.chart-board-round .text-xl { font-size: 1.5rem; line-height: 2rem; }
+
+/* 배지/칩 전역 안전망(2026-08-04) — 좁은 화면에서 한글 pill 이 글자 단위로 세로 꺾이던 것 방지.
+   pill(rounded-full) 스팬은 의미상 한 줄 라벨이라 전 화면 공통으로 nowrap.
+   (개별 화면의 아이콘 축약은 display.tsx AdaptiveBadge/TagChip/InsuranceBadge 정본 사용) */
+span[class*="rounded-full"] { white-space: nowrap; }
+
+/* 축약 배지 정본(display.tsx AdaptiveBadge/TagChip) — 의미: "라벨은 넓을 때만".
+   기본은 뷰포트(900px+)로 판정해 어느 화면이든 브라우저 크기 조절에 반응하고,
+   조상에 @container 가 선언된 곳(환자 목록 2열 등)에서는 그 컨테이너 폭(56rem)이 우선한다.
+   🔴 Tailwind @[..] 컨테이너 변형은 조상 컨테이너가 없으면 '항상 불일치'라(뷰포트 폴백 없음 — 실측)
+      전역 부품에는 쓰지 못한다 — 그래서 media+@container 합성 유틸을 정본으로 둔다. */
+.adaptive-label { display: none; }
+@media (min-width: 900px) { .adaptive-label { display: inline; } }
+@container (max-width: 56rem) { .adaptive-label { display: none !important; } }
+
+.adaptive-compact { display: inline-flex; }
+@media (min-width: 900px) { .adaptive-compact { display: none; } }
+@container (max-width: 56rem) { .adaptive-compact { display: inline-flex !important; } }
+
+/* ── 접근성 표면(임상 UX 규약 §4.6) — SystemConfig `ui.a11y.*` 반영 ─────────────
+   배선: lib/ui-settings `applyA11yRoot` 가 <html> 에 data 속성/CSS 변수를 건다(components/layout/A11yRoot).
+
+   🔴 **기본값(배율 1.0 · NORMAL)에서는 속성이 아예 붙지 않는다** — 그래서 아래 규칙은 단 하나도
+      매칭되지 않고 화면은 현행과 픽셀 단위로 동일하다. 위원회가 값을 넣은 뒤에만 켜진다.
+   🔴 배율은 <html> 자신의 font-size 를 건드리지 않는다(root 의 font-size 에 쓰는 rem 은 초기값 기준이라
+      rem 기반 여백·폭까지 함께 커져 레이아웃이 무너진다). body 와 **본문 텍스트 유틸 4종**만 스코프 안에서
+      환산한다(.portal-font-lg·.chart-board-round 과 같은 방식). */
+[data-text-scale] body { font-size: calc(1rem * var(--app-text-scale, 1)); }
+[data-text-scale] .text-xs { font-size: calc(0.75rem * var(--app-text-scale, 1)); line-height: calc(1rem * var(--app-text-scale, 1)); }
+[data-text-scale] .text-sm { font-size: calc(0.875rem * var(--app-text-scale, 1)); line-height: calc(1.25rem * var(--app-text-scale, 1)); }
+[data-text-scale] .text-base { font-size: calc(1rem * var(--app-text-scale, 1)); line-height: calc(1.5rem * var(--app-text-scale, 1)); }
+[data-text-scale] .text-lg { font-size: calc(1.125rem * var(--app-text-scale, 1)); line-height: calc(1.75rem * var(--app-text-scale, 1)); }
+
+/* 대비 강화 — 회색 본문만 한 단계 어둡게. 🔴 순수 흑백 극단은 쓰지 않는다(§4.6 야간 조도·눈부심):
+   gray-400 → gray-600, gray-500 → gray-700. 배경·테두리는 건드리지 않아 레이아웃·강조 위계가 유지된다. */
+[data-contrast="HIGH"] .text-gray-400 { color: #4b5563; }
+[data-contrast="HIGH"] .text-gray-500 { color: #374151; }
+
+/* ── 인쇄 기본 차단(2026-08-04·PrintGuard) — 의료용 SW: 지정된 인쇄만 허용 ──
+   html.print-allowed 가 없으면(전용 /print/* 경로·sanctionedPrint() 밖의 모든 인쇄)
+   본문 전체를 숨기고 차단 안내 시트만 출력물로 나온다. */
+.print-deny-sheet { display: none; }
+@media print {
+  html:not(.print-allowed) body > *:not(.print-deny-sheet) { display: none !important; }
+  html:not(.print-allowed) .print-deny-sheet {
+    display: block !important;
+    padding: 4rem 2rem;
+    font-family: inherit;
+    text-align: center;
+  }
+  .print-deny-sheet h1 { font-size: 1.4rem; margin-bottom: 1rem; }
+  .print-deny-sheet p { font-size: 0.95rem; color: #374151; margin: 0.4rem 0; }
+  .print-deny-sheet .print-deny-meta { margin-top: 2rem; font-size: 0.8rem; color: #9ca3af; }
+}
+
+/* 🔴 (2026-10-12) 전용 인쇄 루트 없이 화면을 그대로 찍는 허용 인쇄 — 앱 껍데기(h-screen·overflow-hidden)가
+   본문을 한 화면 높이로 잘라 나머지가 사라진다. 메뉴·상단 바를 빼고 높이·스크롤 가둠을 푼다. */
+@media print {
+  html.print-allowed body:not(:has(> .doc-print-root)) :is([data-sidebar-shell], header[data-topbar-density]) { display: none !important; }
+  html.print-allowed body:not(:has(> .doc-print-root)) :is(.h-screen, main) { height: auto !important; overflow: visible !important; }
+}
+
+/* 허용 인쇄물 워터마크 — 매 페이지 하단에 사용자·시각(PrintGuard beforeprint 가 스탬프) */
+.print-watermark { display: none; }
+@media print {
+  html.print-allowed .print-watermark {
+    display: block !important;
+    position: fixed;
+    bottom: 0.4cm; left: 0; right: 0;
+    text-align: center;
+    font-size: 8pt;
+    color: #9ca3af;
+  }
+}
